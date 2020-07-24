@@ -60,6 +60,33 @@ Remember that the commit records the snapshot you set up in your staging area. A
 sitting there modified; you can do another commit to add it to your history. Every time you perform a commit, you’re
 recording a snapshot of your project that you can revert to or compare to later.
 
+1. `git log -p -2`
+1. `git log --stat`
+1. `git log --pretty=oneline --graph`
+1. `git log --pretty=format: "%h - %an, %ar : %s" --graph`
+1. `git log --since=2.weeks --committer= --grep= --all-match`
+1. `git log --until=2.weeks`
+1. `git log --before=2.weeks`
+1. `git log -Sfunction_name`
+
+
+### Undoing Things
+1. `git commit --amend`
+
+This command takes your staging area and uses it for the commit. If you’ve made no changes since your last
+commit (for instance, you run this command immediately after your previous commit), then your snapshot will look
+exactly the same, and all you’ll change is your commit message.
+As an example, if you commit and then realize you forgot to stage the changes in a file you wanted to add to this
+commit, you can do `git add`, then `git commit --amend`. 
+You end up with a single commit—the second commit replaces the results of the first.
+
+Remember, anything that is committed in Git can almost always be recovered. Even commits that were on
+branches that were deleted or commits that were overwritten with an --amend commit can be recovered (see the
+section on data recovery). However, anything you lose that was never committed is likely never to be seen again.
+
+### Git Remotes
+1. `git remote -v`:
+
 ## Git Branching
 1. That’s basically what a branch in Git is: a simple pointer or reference to the head of a line of work.
 1. The HEAD file is a symbolic reference to the branch you’re currently on. By symbolic reference, we mean that
