@@ -2,6 +2,8 @@
 **[Git Overview](#git-overview)**<br>
 **[Git Basics](#git-basics)**<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
+**[Git Internals](#git-internals)**<br>
+
 
 ## Git Overview
 
@@ -96,6 +98,10 @@ because you’re most likely to need faster access to the most recent version of
 1. `refs`: stores pointers into commit objects in that data (branches)
 1. `HEAD`: points to the branch you currently have checked out
 1. `index`: where Git stores your staging area information
+
+### Transfer Protocols
+#### The Dumb Protocol
+#### The Smart Protocol
 
 ## Git Usage Examples
 
