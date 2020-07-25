@@ -333,6 +333,51 @@ while until a garbage collection runs, so if it was accidentally deleted, it’s
 #### Rebasing
 Two main ways to integrate changes from one branch into another: the merge and the rebase.
 
+The easiest way to integrate the branches, as we’ve already covered, is the merge command. It performs a
+three-way merge between the two latest branch snapshots (C3 and C4) and the most recent common ancestor of the
+two (C2), creating a new snapshot (and commit).
+
+However, there is another way: you can take the patch of the change that was introduced in C4 and reapply it on
+top of C3. In Git, this is called rebasing. With the rebase command, you can take all the changes that were committed
+on one branch and replay them on another one.
+
+It works by going to the common ancestor of the two branches (the one you’re on and the one you’re rebasing
+onto), getting the diff introduced by each commit of the branch you’re on, saving those diffs to temporary files,
+resetting the current branch to the same commit as the branch you are rebasing onto, and finally applying each
+change in turn.
+```
+$ git checkout experiment
+$ git rebase master
+First, rewinding head to replay your work on top of it...
+Applying: added staged command
+```
+At this point, you can go back to the master branch and do a fast-forward merge.
+
+here is no difference in the end product of the integration, but rebasing makes for a cleaner history.
+If you examine the log of a rebased branch, it looks like a linear history: it appears that all the work happened in series,
+even when it originally happened in parallel.
+Often, you’ll do this to make sure your commits apply cleanly on a remote branch – perhaps in a project to
+which you’re trying to contribute but that you don’t maintain. In this case, you’d do your work in a branch and then
+rebase your work onto origin/master when you were ready to submit your patches to the main project. That way, the
+maintainer doesn’t have to do any integration work—just a fast-forward or a clean apply.
+Note that the snapshot pointed to by the final commit you end up with, whether it’s the last of the rebased
+commits for a rebase or the final merge commit after a merge, is the same snapshot—it’s only the history that is
+different. Rebasing replays changes from one line of work onto another in the order they were introduced, whereas
+merging takes the endpoints and merges them.
+
+You can also have your rebase replay on something other than the rebase target branch.
+Suppose you are on 'client' branch, you have 'master', 'server', 'client' branches, 
+Suppose you decide that you want to merge your client-side changes into your mainline for a release, but you
+want to hold off on the server-side changes until it’s tested further. You can take the changes on client that aren’t on
+server (C8 and C9) and replay them on your master branch by using the --onto option of git rebase:
+
+$ git rebase --onto master server client
+This basically says, “Check out the client branch, figure out the patches from the common ancestor of the client
+and server branches, and then replay them onto master.”
+
+Now you can fast-forward your master branch:
+$ git checkout master
+$ git merge client
 
 
 ## Git Internals
