@@ -274,6 +274,67 @@ To synchronize your work, you run a git fetch origin command. This command looks
 is (in this case, it’s git.ourcompany.com), fetches any data from it that you don’t yet have, and updates your local
 database, moving your origin/master pointer to its new, more up-to-date position.
 
+#### Pushing
+1. `git push (remote) (branch)`:
+`git push origin serverfix`: Git automatically expands the `serverfix` branch name out to `refs/heads/
+serverfix:refs/heads/serverfix`, which means, “Take my `serverfix` local branch and push it to update the remote’s
+`serverfix` branch.”
+Or use `push origin serverfix:remote_branch_name` to do the same thing.
+
+It’s important to note that when you do a fetch that brings down new remote branches, you don’t automatically
+have local, editable copies of them. In other words, in this case, you don’t have a new serverfix branch—you only
+have an origin/serverfix pointer that you can’t modify.
+To merge this work into your current working branch, you can run `git merge origin/serverfix`. If you want
+your own serverfix branch that you can work on, you can base it off your remote branch:
+```
+$ git checkout -b serverfix origin/serverfix
+Branch serverfix set up to track remote branch serverfix from origin.
+Switched to a new branch 'serverfix'
+```
+
+#### Tracking Branches
+1. Checking out a local branch from a remote branch automatically creates what is called a “tracking branch”
+(or sometimes an “upstream branch”). Tracking branches are local branches that have a direct relationship to a
+remote branch. If you’re on a tracking branch and type git push, Git automatically knows which server and branch
+to push to. Also, running git pull while on one of these branches fetches all the remote references and then
+automatically merges in the corresponding remote branch.
+
+1. `git checkout --track origin/serverfix` this is the same as `git checkout -b [branch] [remotename]/[branch]`
+
+If you already have a local branch and want to set it to a remote branch you just pulled down, or want to change
+the upstream branch you’re tracking, you can use the -u or --set-upstream-to option to git branch to explicitly set
+it at any time.
+
+```
+$ git branch -u origin/serverfix
+Branch serverfix set up to track remote branch serverfix from origin.
+```
+
+`git fetch --all; git branch -vv` list tracking branches
+
+##### Upstream shorthand
+When you have a tracking branch set up, you can reference it with the @{upstream} or @{u} shorthand. So if
+you’re on the master branch and it’s tracking origin/master, you can say something like git merge @{u} instead
+of git merge origin/master if you want.
+
+#### Pulling
+
+git pull which is essentially a git fetch immediately followed by a git merge in most cases.
+
+Generally it’s better to simply use the fetch and merge commands explicitly as the magic of git pull can often
+be confusing.
+
+#### Deleting Remote Branches
+1. `git push origin --delete serverfix`
+
+Basically all this does is remove the pointer from the server. The Git server will generally keep the data there for a
+while until a garbage collection runs, so if it was accidentally deleted, it’s often easy to recover.
+
+#### Rebasing
+Two main ways to integrate changes from one branch into another: the merge and the rebase.
+
+
+
 ## Git Internals
 
 ### Git is a Content-Addressable Filesystem
