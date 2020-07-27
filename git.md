@@ -34,9 +34,88 @@ your next commit. It’s sometimes referred to as the “index”, but it’s al
 
 ## Git Basics
 ### Git configs
-1. System config: `/etc/gitconfig`
-1. Global config: `~/.gitconfig`
-1. Local config: `.git/config` under each repository
+1. System config: `/etc/gitconfig`, applies to every user on the system and all their repositories
+1. Global config: `~/.gitconfig`, per user
+1. Local config: `.git/config` under each repository, per repository
+
+Each of these "levels" overwrites the values in the previous level.
+
+#### Excludes file globally
+`~/lgitignore_global`: you want to ignore certain files for all repositories that you work with
+
+```
+*~
+.DS_Store
+```
+
+..and you run git config --global core.excludesfile ~/.gitignore_global, Git will never again bother
+you about those files.
+
+#### Formatting and Whitespace
+Formatting and whitespace issues are some of the more frustrating and subtle problems that many developers
+encounter when collaborating, especially cross-platform. It’s very easy for patches or other collaborated work to
+introduce subtle whitespace changes because editors silently introduce them, and if your files ever touch a Windows
+system, their line endings might be replaced. Git has a few configuration options to help with these issues.
+core.autocrlf
+If you’re programming on Windows and working with people who are not (or vice versa), you’ll probably run into
+line-ending issues at some point. This is because Windows uses both a carriage-return character and a linefeed
+character for newlines in its files, whereas Mac and Linux systems use only the linefeed character. This is a subtle
+but incredibly annoying fact of cross-platform work; many editors on Windows silently replace existing LF-style line
+endings with CRLF, or insert both line-ending characters when the user hits the enter key.
+
+
+Git can handle this by auto-converting CRLF line endings into LF when you add a file to the index, and vice versa
+when it checks out code onto your filesystem. You can turn on this functionality with the core.autocrlf setting. If
+you’re on a Windows machine, set it to true—this converts LF endings into CRLF when you check out code:
+$ git config --global core.autocrlf true
+If you’re on a Linux or Mac system that uses LF line endings, then you don’t want Git to automatically convert
+them when you check out files; however, if a file with CRLF endings accidentally gets introduced, then you may want
+Git to fix it. You can tell Git to convert CRLF to LF on commit but not the other way around by setting core.autocrlf
+to input:
+$ git config --global core.autocrlf input
+This setup should leave you with CRLF endings in Windows checkouts, but LF endings on Mac and Linux systems
+and in the repository.
+If you’re a Windows programmer doing a Windows-only project, then you can turn off this functionality,
+recording the carriage returns in the repository by setting the config value to false:
+$ git config --global core.autocrlf false
+
+
+#### core.whitespace
+Git comes preset to detect and fix some whitespace issues. It can look for six primary whitespace issues—three are
+enabled by default and can be turned off, and three are disabled by default but can be activated.
+The ones that are turned on by default are blank-at-eol, which looks for spaces at the end of a line; blank-at-eof,
+which notices blank lines at the end of a file; and space-before-tab, which looks for spaces before tabs at the beginning
+of a line.
+The three that are disabled by default but can be turned on are indent-with-non-tab, which looks for lines that
+begin with spaces instead of tabs (and is controlled by the tabwidth option); tab-in-indent, which watches for tabs in
+the indentation portion of a line; and cr-at-eol, which tells Git that carriage returns at the end of lines are OK.
+You can tell Git which of these you want enabled by setting core.whitespace to the values you want on or off,
+separated by commas. You can disable settings by either leaving them out of the setting string or prepending a - in
+front of the value. For example, if you want all but cr-at-eol to be set, you can do this:
+$ git config --global core.whitespace \
+trailing-space,space-before-tab,indent-with-non-tab
+Git will detect these issues when you run a git diff command and try to color them so you can possibly fix them
+before you commit. It will also use these values to help you when you apply patches with git apply. When you’re
+applying patches, you can ask Git to warn you if it’s applying patches with the specified whitespace issues:
+$ git apply --whitespace=warn <patch>
+Or you can have Git try to automatically fix the issue before applying the patch:
+$ git apply --whitespace=fix <patch>
+These options apply to the git rebase command as well. If you’ve committed whitespace issues but haven’t yet
+pushed upstream, you can run git rebase --whitespace=fix to have Git automatically fix whitespace issues as it’s
+rewriting the patches.
+  
+### Git Attributes
+Some of these settings can also be specified for a path, so that Git applies those settings only for a subdirectory or
+subset of files. These path-specific settings are called Git attributes and are set either in a .gitattributes file in
+one of your directories (normally the root of your project) or in the .git/info/attributes file if you don’t want the
+attributes file committed with your project.
+
+Using attributes, you can do things like specify separate merge strategies for individual files or directories in your
+project, tell Git how to diff non-text files, or have Git filter content before you check it into or out of Git.
+
+
+
+
   
 ### Getting a Git Repository
 1. 'git init'
@@ -741,6 +820,547 @@ it a regex. For example, this would have done the same thing: git log -L '/unsig
 bound/',/^}/:zlib.c. You could also give it a range of lines or a single line number and you’ll get the same sort of output.
 
 #### Rewriting History
+
+#### Changing the Last Commit
+1. Change commit message
+`git commit --amend`: change your last commit
+
+1. Change the snapshot you just recorded: adding, changing, removing files
+  * Stage the  changes you want by editing a file and running `git add` on it or `git rm` to a tracked file
+  * Then run `git commit --amend`, which takes your current staging area and makes it the snapshot for the new commit.
+  
+You need to be careful with this technique because amending changes the SHA-1 of the commit. It’s like a very
+small rebase—don’t amend your last commit if you’ve already pushed it.  
+
+#### Changing Multiple Commit Messages
+
+To modify a commit that is farther back in your history, you must move to more complex tools. 
+You can use the rebase tool to rebase a series of commits onto the HEAD they were
+originally based on instead of moving them to another one. With the interactive rebase tool, you can then stop after
+each commit you want to modify and change the message, add files, or do whatever you wish. You can run rebase
+interactively by adding the `-i` option to `git rebase`. You must indicate how far back you want to rewrite commits by
+telling the command which commit to rebase onto.
+
+For example, if you want to change the last three commit messages, or any of the commit messages in that group,
+you supply as an argument to git rebase -i the parent of the last commit you want to edit, which is HEAD~2^ or
+HEAD~3. It may be easier to remember the ~3 because you’re trying to edit the last three commits; but keep in mind
+that you’re actually designating four commits ago, the parent of the last commit you want to edit:
+`$ git rebase -i HEAD~3`
+
+Remember again that this is a rebasing command—every commit included in the range HEAD~3..HEAD will be
+rewritten, whether or not you change the message. Don’t include any commit you’ve already pushed to a central
+server—doing so will confuse other developers by providing an alternate version of the same change.
+
+Running this command gives you a list of commits in your text editor that looks something like this:
+```
+pick f7f3f6d changed my name a bit
+pick 310154e updated README formatting and added blame
+pick a5f4a0d added cat-file
+# Rebase 710f0f8..a5f4a0d onto 710f0f8
+#
+# Commands:
+# p, pick = use commit
+# r, reword = use commit, but edit the commit message
+# e, edit = use commit, but stop for amending
+# s, squash = use commit, but meld into previous commit
+# f, fixup = like "squash", but discard this commit's log message
+# x, exec = run command (the rest of the line) using shell
+#
+# These lines can be re-ordered; they are executed from top to bottom.
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+#
+# However, if you remove everything, the rebase will be aborted.
+#
+# Note that empty commits are commented out
+```
+
+It’s important to note that these commits are listed in the opposite order than you normally see them using the
+log command.
+
+Notice the reverse order. The interactive rebase gives you a script that it’s going to run. It will start at the commit
+you specify on the command line (HEAD~3) and replay the changes introduced in each of these commits from top to
+bottom. It lists the oldest at the top, rather than the newest, because that’s the first one it will replay.
+You need to edit the script so that it stops at the commit you want to edit. To do so, change the word pick to the
+word edit for each of the commits you want the script to stop after.
+
+#### Reordering Commits
+You can also use interactive rebases to reorder or remove commits entirely
+
+#### Squashing a Commit
+It’s also possible to take a series of commits and squash them down into a single commit with the interactive rebasing
+tool.
+
+If, instead of “pick” or “edit,” you specify “squash,” Git applies both that change and the change directly before it
+and makes you merge the commit messages.
+
+#### Splitting a Commit
+Splitting a commit undoes a commit and then partially stages and commits as many times as commits you want to
+end up with.
+
+Then, when the script drops you to the command line, you reset that commit, take the changes that have been
+reset, and create multiple commits out of them.
+
+`git reset HEAD^` effectively undoes that commit and leave the modified files unstages.
+
+Once again, this changes the SHAs of all the commits in your list, so make sure no commit shows up in that list
+that you’ve already pushed to a shared repository.
+
+#### The Nuclear Option: filter-branch
+There is another history-rewriting option that you can use if you need to rewrite a larger number of commits in
+some scriptable way—for instance, changing your e-mail address globally or removing a file from every commit. The
+command is filter-branch, and it can rewrite huge swaths of your history, so you probably shouldn’t use it unless
+your project isn’t yet public and other people haven’t based work off the commits you’re about to rewrite.
+
+#### Reset Demystified
+
+An easier way to think about reset and checkout is through the mental frame of Git being a content manager of three
+different trees. By “tree” here we really mean “collection of files,” not specifically the data structure. (There are a few
+cases where the index doesn’t exactly act like a tree, but for our purposes it is easier to think about it this way for now.)
+Git as a system manages and manipulates three trees in its normal operation:
+```
+Tree Role
+HEAD Last commit snapshot, next parent
+Index Proposed next commit snapshot
+Working Directory Sandbox
+```
+
+#### The HEAD
+HEAD is the pointer to the current branch reference, which is in turn a pointer to the last commit made on that
+branch. That means HEAD will be the parent of the next commit that is created. It’s generally simplest to think of
+HEAD as the snapshot of your last commit.
+
+Here is an example of getting the actual directory
+listing and SHA checksums for each file in the HEAD snapshot
+`git cat-file -p HEAD`
+`git ls-tree -r HEAD`
+
+#### The Index
+
+The Index is your proposed next commit. We’ve also been referring to this concept as Git’s “Staging Area” as this is
+what Git looks at when you run git commit.
+
+Git populates this index with a list of all the file contents that were last checked out into your Working Directory
+and what they looked like when they were originally checked out. You then replace some of those files with new
+versions of them, and git commit converts that into the tree for a new commit.
+
+`git ls-files -s`
+
+The Index is not technically a tree structure—it’s actually implemented as a flattened manifest—but for our
+purposes it’s close enough.
+
+#### The Working Directory
+
+The other two trees store their content in an efficient but inconvenient
+manner, inside the .git folder. The Working Directory unpacks them into actual files, which makes it much easier
+for you to edit them. Think of the Working Directory as a sandbox, where you can try changes out before committing
+them to your staging area (Index) and then to history.
+
+`tree`
+
+#### The Workflow
+Git’s main purpose is to record snapshots of your project in successively better states, by manipulating these three trees.
+
+Let’s say you go into a new directory with a single file in it. We’ll call this v1 of the file, and we’ll indicate it in blue.
+Now we run git init, which creates a Git repository with a HEAD reference that points to an unborn branch (master
+doesn’t exist yet).
+At this point, only the Working Directory tree has any content.
+
+we use git add to take content in the Working Directory and copy it to the Index.
+
+Then we run git commit, which takes the contents of the Index and saves it as a permanent snapshot, creates a
+commit object which points to that snapshot, and updates master to point to that commit.
+If we run git status, we’ll see no changes, because all three trees are the same.
+
+Now we want to make a change to that file and commit it. We’ll go through the same process, changing the file in
+our Working Directory. Let’s call this v2 of the file, and indicate it in red.
+
+If we run git status right now, we’ll see the file in red as “Changes not staged for commit,” because that entry
+differs between the Index and the Working Directory. Next we run git add on it to stage it into our Index.
+
+At this point if we run git status we will see the file in green under “Changes to be committed” because the
+Index and HEAD differ – that is, our proposed next commit is now different from our last commit. Finally, we run
+git commit to finalize the commit.
+
+Switching branches or cloning goes through a similar process. When you checkout a branch, it changes HEAD to
+point to the new branch ref, populates your Index with the snapshot of that commit, then copies the contents of the
+Index into your Working Directory.
+
+#### The Role of Reset
+1. Step 1: Move HEAD
+The first thing reset will do is move what HEAD points to. This isn’t the same as changing HEAD itself (which is what
+checkout does); reset moves the branch that HEAD is pointing to. This means if HEAD is set to the master branch
+(i.e., you’re currently on the master branch), running git reset 9e5e64a will start by making master point
+to 9e5e64a.
+
+No matter what form of reset with a commit you invoke, this is the first thing it will always try to do. With
+reset --soft, it will simply stop there.
+`git reset --soft HEAD~`
+
+Now take a second to look at that diagram and realize what happened—it essentially undid the last git commit
+command. When you run git commit, Git creates a new commit and moves the branch that HEAD points to up to it.
+When you reset to HEAD~ (the parent of HEAD), you are moving the branch back to where it was, without changing the
+Index or Working Directory. You could now update the Index and run git commit again to accomplish what
+git commit --amend would have done.
+
+
+1. Step 2: Updating the Index (--mixed)
+
+Note that if you run git status now you’ll see in green the difference between the Index and what the new HEAD is.
+The next thing reset will do is to update the Index with the contents of whatever snapshot HEAD now points to.
+
+`git reset [--mixed] HEAD~`
+
+If you specify the --mixed option, reset will stop at this point. This is also the default, so if you specify no option at
+all (just git reset HEAD~ in this case), this is where the command will stop.
+
+it still undid your last commit, but
+also unstaged everything. You rolled back to before you ran all your git add and git commit commands.
+
+1. Step 3: Updating the Working Directory (--hard)
+
+The third thing that reset does is makes the Working Directory look like the Index. If you use the --hard option, it will
+continue to this stage.
+
+You undid your last commit, the git add and git commit commands,
+and all the work you did in your Working Directory.
+It’s important to note that this flag (--hard) is the only way to make the reset command dangerous, and one of
+the very few cases where Git will actually destroy data. Any other invocation of reset can be pretty easily undone, but
+the --hard option cannot, since it forcibly overwrites files in the Working Directory.
+
+In this particular case, we still
+have the v3 version of our file in a commit in our Git DB, and we could get it back by looking at our reflog, but if we
+had not committed it, Git still would have overwritten the file and it would be unrecoverable.
+
+Recap
+The reset command overwrites these three trees in a specific order, stopping when you tell it to:
+  1.  Move the branch HEAD points to (stop here if --soft)
+  2.  Make the Index look like HEAD (stop here unless --hard)
+  3.  Make the Working Directory look like the Index
+  
+#### Reset with a Path
+
+If you specify
+a path, reset will skip step 1, and limit the remainder of its actions to a specific file or set of files. This actually sort of
+makes sense—HEAD is just a pointer, and you can’t point to part of one commit and part of another. But the Index
+and Working Directory can be partially updated, so reset proceeds with steps 2 and 3.
+
+`git reset file.txt`
+
+So, assume we run git reset file.txt. This form (because you did not specify a commit SHA or branch, and
+you didn’t specify --soft or --hard) is shorthand for git reset --mixed HEAD file.txt, which:
+  1.  Moves the branch HEAD points to (skipped)
+  2.  Makes the Index look like HEAD (stop here)
+So it essentially just copies file.txt from HEAD to the Index.
+
+This has the practical effect of unstaging the file. If we look at the diagram for that command and think about
+what git add does, they are exact opposites.
+
+We could just as easily not let Git assume we meant “pull the data from HEAD” by specifying a specific commit to
+pull that file version from. We would just run something like git reset eb43bf file.txt.
+
+This effectively does the same thing as if we had reverted the content of the file to v1 in the Working Directory, ran
+git add on it, then reverted to v3 again (without actually going through all those steps). If we run git commit now, it
+will record a change that reverts that file to v1, even though we never actually had it in our Working Directory again.
+It’s also interesting to note that like git add, the reset command will accept a --patch option to unstage content
+on a hunk-by-hunk basis. So you can selectively unstage or revert content.
+
+#### Squashing
+
+Say you have a series of commits with messages like “oops”, “WIP,” and “forgot this file.” You can use reset to
+quickly and easily squash them into a single commit that makes you look really smart.
+
+#### Check It Out
+Like reset, checkout manipulates the
+three trees, and it is a bit different depending on whether or not you give the command a file path.
+
+##### Without Paths
+Running git checkout [branch] is pretty similar to running git reset --hard [branch] in that it updates all three
+trees for you to look like [branch], but there are two important differences.
+1. First, unlike reset --hard, checkout is Working-Directory safe; it will check to make sure it’s not blowing away
+files that have changes to them. Actually, it’s a bit smarter than that—it tries to do a trivial merge in the Working
+Directory, so all the files you haven’t changed in will be updated. reset --hard, and on the other hand, will simply
+replace everything across the board without checking.
+1. The second important difference is how it updates HEAD. Where reset will move the branch that HEAD points
+to, checkout will move HEAD itself to point to another branch.
+
+##### With Paths
+
+The other way to run checkout is with a file path, which, like reset, does not move HEAD. It is just like git reset
+[branch] file in that it updates the index with that file at that commit, but it also overwrites the file in the working
+directory. It would be exactly like git reset --hard [branch] file (if reset would let you run that)—it’s not Working-
+Directory safe, and it does not move HEAD.
+Also, like git reset and git add, checkout will accept a --patch option to allow you to selectively revert file
+contents on a hunk-by-hunk basis.
+
+Here’s a cheat-sheet for which commands affect which trees. The “HEAD” column reads “REF” if that command
+moves the reference (branch) that HEAD points to, and “HEAD” if it moves HEAD itself. Pay especial attention to the
+WD Safe? column—if it says NO, take a second to think before running that command.
+
+HEAD Index Workdir WD Safe?
+Commit Level
+reset --soft [commit] REF NO NO YES
+reset [commit] REF YES NO YES
+reset --hard [commit] REF YES YES NO
+checkout [commit] HEAD YES YES YES
+File Level
+reset (commit) [file] NO YES NO YES
+checkout (commit)
+[file]
+NO YES YES NO
+
+
+#### Advanced Merging
+
+Git’s philosophy is to be smart about determining when a merge
+resolution is unambiguous, but if there is a conflict, it does not try to be clever about automatically resolving it.
+Therefore, if you wait too long to merge two branches that diverge quickly, you can run into some issues.
+
+##### Merge Conflicts
+
+First of all, if at all possible, try to make sure your working directory is clean before doing a merge that may have
+conflicts. If you have work in progress, either commit it to a temporary branch or stash it. This makes it so that you can
+undo anything you try here. If you have unsaved changes in your working directory when you try a merge, some of
+these tips may help you lose that work.
+
+The git merge --abort option tries to revert to your state before you ran the merge. The only cases where it may
+not be able to do this perfectly would be if you had unstashed, uncommitted changes in your working directory when
+you ran it, otherwise it should work fine.
+If for some reason you find yourself in a horrible state and just want to start over, you can also run git reset
+--hard HEAD or wherever you want to get back to. Remember again that this will blow away your working directory, so
+make sure you don’t want any changes there.
+
+1. Ignoring Whitespace
+The default merge strategy can take arguments though, and a few of them are about properly ignoring whitespace
+changes. If you see that you have a lot of whitespace issues in a merge, you can simply abort it and do it again, this
+time with -Xignore-all-space or -Xignore-space-change. The first option ignores changes in any amount of existing
+whitespace, the second ignores all whitespace changes altogether.
+
+1. Manual File Re-merging
+First, we get into the merge conflict state. Then we want to get copies of my version of the file, their version (from
+the branch we’re merging in), and the common version (from where both sides branched off ). Then we want to fix up
+either their side or our side and re-try the merge again for just this single file.
+Getting the three file versions is actually pretty easy. Git stores all these versions in the index under “stages,”
+which each have numbers associated with them. Stage 1 is the common ancestor, stage 2 is your version, and stage 3 is
+from the MERGE_HEAD, the version you’re merging in (“theirs”).
+You can extract a copy of each of these versions of the conflicted file with the git show command and a special
+syntax.
+
+```
+$ git show :1:hello.rb > hello.common.rb
+$ git show :2:hello.rb > hello.ours.rb
+$ git show :3:hello.rb > hello.theirs.rb
+```
+
+If you want to get a little more hard core, you can also use the ls-files -u plumbing command to get the actual
+SHAs of the Git blobs for each of these files.
+`git ls-files -u`
+
+The :1:hello.rb is just shorthand for looking up that blob SHA.
+
+`git merge-file -p hello.ours.rb hello.common.rb hello.theirs.rb > hello.rb`
+
+If you want to get an idea before finalizing this commit about what was actually changed between one side or the
+other, you can ask git diff to compare what is in your working directory that you’re about to commit as the result of
+the merge to any of these stages.
+
+To compare your result to what you had in your branch before the merge, in other words, to see what the merge
+introduced, you can run `git diff --ours`:
+
+If we want to see how the result of the merge differed from what was on their side, you can run git diff
+--theirs
+
+Finally, you can see how the file has changed from both sides with git diff --base.
+
+##### Checking out conflitcs
+Perhaps we’re not happy with the resolution at this point for some reason, or maybe manually editing one or both
+sides still didn’t work well and we need more context.
+
+For this example, we have two longer lived branches that each have a few
+commits in them but create a legitimate content conflict when merged.
+
+`$ git log --graph --oneline --decorate --all`
+
+One helpful tool is git checkout with the --conflict option. This re-checkouts the file and replaces the merge
+conflict markers. This can be useful if you want to reset the markers and try to resolve them again.
+You can pass --conflict either diff3 or merge (which is the default). If you pass it diff3, Git will use a slightly
+different version of conflict markers, not only giving you the “ours” and “theirs” versions, but also the “base” version
+inline to give you more context.
+```
+$ git checkout --conflict=diff3 hello.rb
+```
+
+The git checkout command can also take --ours and --theirs options, which can be a really fast way of just
+choosing either one side or the other without merging things at all.
+
+##### Merge Log
+To get a full list of all the unique commits that were included in either branch involved in this merge, we can use
+the “triple dot” syntax.
+```
+$ git log --oneline --left-right HEAD...MERGE_HEAD
+```
+
+We can further simplify this though to give us much more specific context. If we add the --merge option to
+git log, it will only show the commits in either side of the merge that touch a file that’s currently conflicted.
+$ git log --oneline --left-right --merge
+< 694971d update phrase to hola world
+> c3ffff1 changed text to hello mundo
+If you run that with the -p option instead, you get just the diffs to the file that ended up in conflict. This can be
+really helpful in quickly giving you the context you need to help understand why something conflicts and how to more
+intelligently resolve it.
+
+##### Combine Diff Format
+
+Because Git stages any merge results that are successful, when you run git diff while in a conflicted merge state, you
+only get what is currently still in conflict. This can be helpful to see what you still have to resolve.
+
+When you run git diff directly after a merge conflict, it will give you information in a rather unique diff output format.
+
+The format is called “Combined Diff” and gives you two columns of data next to each line. The first column
+shows you if that line is different (added or removed) between the “ours” branch and the file in your working directory
+and the second column does the same between the “theirs” branch and your working directory copy.
+So in that example you can see that the <<<<<<< and >>>>>>> lines are in the working copy but were not in either
+side of the merge. This makes sense because the merge tool stuck them in there for our context, but we’re expected to
+remove them.
+
+You can also get this from the git log for any merge after the fact to see how something was resolved after the
+fact. Git will output this format if you run git show on a merge commit, or if you add a --cc option to a git log -p
+(which by default only shows patches for non-merge commits).
+```
+$ git log --cc -p -1
+```
+
+#### Undoing Merges
+1. Fix the References
+
+If the unwanted merge commit only exists on your local repository, the easiest and best solution is to move the
+branches so that they point where you want them to. In most cases, if you follow the errant git merge with git reset
+--hard HEAD~, this will reset the branch pointers so they look like this
+
+The downside of this approach is that it’s rewriting history, which can be problematic with a shared repository.
+If other people have the commits you’re rewriting, you should probably avoid reset. This approach also won’t work if
+any other commits have been created since the merge; moving the refs would effectively lose those changes.
+
+1. Reverse the Commit
+
+Git gives you the option of making a new commit
+that undoes all the changes from an existing one. Git calls this operation a “revert,” and in this particular scenario,
+you’d invoke it like this:
+```
+$ git revert -m 1 HEAD
+```
+The -m 1 flag indicates which parent is the “mainline” and should be kept. When you invoke a merge into HEAD
+(git merge topic), the new commit has two parents: the first one is HEAD (C6), and the second is the tip of the
+branch being merged in (C4). In this case, we want to undo all the changes introduced by merging in parent #2 (C4),
+while keeping all the content from parent #1 (C6).
+
+Git will get confused if you try to merge
+topic into master again:
+$ git merge topic
+Already up-to-date.
+
+There’s nothing in topic that isn’t already reachable from master. What’s worse, if you add work to topic and
+merge again, Git will only bring in the changes since the reverted merge
+
+The best way around this is to un-revert the original merge, because now you want to bring in the changes that
+were reverted out, then create a new merge commit:
+```
+$ git revert ^M
+[master 09f0126] Revert "Revert "Merge branch 'topic'""
+$ git merge topic
+```
+
+So far we’ve covered the normal merge of two branches, normally handled with what is called the “recursive” strategy
+of merging.
+
+#### Other Types of Merges
+##### Ours or Theirs Preference
+
+By default, when Git sees a conflict between two branches being merged, it will add merge conflict markers into
+your code and mark the file as conflicted and let you resolve it. If you would prefer for Git to simply choose a specific
+side and ignore the other side instead of letting you manually merge the conflict, you can pass the merge command
+either a -Xours or -Xtheirs.
+If Git sees this, it will not add conflict markers. Any differences that are mergeable, it will merge. Any differences
+that conflict, it will simply choose the side you specify in whole, including binary files
+
+
+#### Debugging with Git
+1. File Annotation
+
+If you track down a bug in your code and want to know when it was introduced and why, file annotation is often your
+best tool. It shows you what commit was the last to modify each line of any file. So, if you see that a method in your
+code is buggy, you can annotate the file with git blame to see when each line of the method was last edited and by
+whom. This example uses the -L option to limit the output to lines 12 through 22:
+
+`git blame -L 12,22 simplegit.rb` 
+
+Also note the ^4832fe2
+commit lines, which designate that those lines were in this file’s original commit. That commit is when this file was
+first added to this project, and those lines have been unchanged since. This is a tad confusing, because now you’ve
+seen at least three different ways that Git uses the ^ to modify a commit SHA, but that is what it means here
+
+Another cool thing about Git is that it doesn’t track file renames explicitly. It records the snapshots and then
+tries to figure out what was renamed implicitly, after the fact. One of the interesting features of this is that you
+can ask it to figure out all sorts of code movement as well. If you pass -C to git blame, Git analyzes the file you’re
+annotating and tries to figure out where snippets of code within it originally came from if they were copied from
+elsewhere.
+`git blame -C -L 141,153 GITPackUpload.m`
+
+1. Binary Search
+
+Annotating a file helps if you know where the issue is to begin with. If you don’t know what is breaking, and there
+have been dozens or hundreds of commits since the last state where you know the code worked, you’ll likely turn to
+git bisect for help. The bisect command does a binary search through your commit history to help you identify as
+quickly as possible which commit introduced an issue.
+
+
+First you run git bisect start to get things going, and then you use
+git bisect bad to tell the system that the current commit you’re on is broken. Then, you must tell bisect when the
+last known good state was, using git bisect good [good_commit]:
+```
+$ git bisect start
+$ git bisect bad
+$ git bisect good v1.0
+Bisecting: 6 revisions left to test after this
+[ecb6e1bc347ccecc5f9350d878ce677feb13d3b2] error handling on repo
+```
+Git figured out that about 12 commits came between the commit you marked as the last good commit (v1.0) and
+the current bad version, and it checked out the middle one for you. At this point, you can run your test to see whether
+the issue exists as of this commit. If it does, then it was introduced sometime before this middle commit; if it doesn’t,
+then the problem was introduced sometime after the middle commit. It turns out there is no issue here, and you tell
+Git that by typing git bisect good and continue your journey
+
+Now you’re on another commit, halfway between the one you just tested and your bad commit. You run your test
+again and find that this commit is broken, so you tell Git that with git bisect bad
+
+
+When you’re finished, you should run git bisect reset to reset your HEAD to where you were before you
+started, or you’ll end up in a weird state
+
+In fact, if
+you have a script that will exit 0 if the project is good or non-0 if the project is bad, you can fully automate git bisect.
+First, you again tell it the scope of the bisect by providing the known bad and good commits. You can do this by listing
+them with the bisect start command if you want, listing the known bad commit first and the known good commit
+second:
+$ git bisect start HEAD v1.0
+$ git bisect run test-error.sh
+Doing so automatically runs test-error.sh on each checked-out commit until Git finds the first broken commit.
+You can also run something such as make or make tests or whatever you have that runs automated tests for you.
+
+
+#### Submodules
+It often happens that while working on one project, you need to use another project from within it. Perhaps it’s a
+library that a third party developed or that you’re developing separately and using in multiple parent projects. A
+common issue arises in these scenarios: you want to be able to treat the two projects as separate yet still be able to use
+one from within the other.
+
+
+The issue with including
+the library is that it’s difficult to customize the library in any way and often more difficult to deploy it, because you
+need to make sure every client has that library available. The issue with vendoring the code into your own project is
+that any custom changes you make are difficult to merge when upstream changes become available.
+Git addresses this issue using submodules. Submodules allow you to keep a Git repository as a subdirectory of
+another Git repository. This lets you clone another repository into your project and keep your commits separate.
 
 
 
