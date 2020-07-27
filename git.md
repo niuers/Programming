@@ -4,12 +4,11 @@
 **[Git Process](#git-process)**<br>
 **[Git Log](#git-log)**<br>
 - [Undoing Things](#undoing-things)<br>
-- [Git Remote](#git-remote)<br>
-
+**[Git Remotes](#git-remotes)**<br>
+**[Git Tag](#git-tag)**<br>
 **[Git Branching](#git-branching)**<br>
-- [Rebasing](#rebasing)<br>
-- [Distributed Git](#distributed-git)<br>
-
+**[Git Rebase](#git-rebase)**<br>
+**[Distributed Git](#distributed-git)**<br>
 **[Git GUI](#git-gui)**<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
@@ -334,121 +333,85 @@ Branch serverfix set up to track remote branch serverfix from origin.
 ```
 1. `git fetch --all; git branch -vv` lists tracking branches
 
-##### Upstream Shorthand
-When you have a tracking branch set up, you can reference it with the @{upstream} or @{u} shorthand. So if
-you’re on the master branch and it’s tracking origin/master, you can say something like git merge @{u} instead
-of git merge origin/master if you want.
+1. Upstream Shorthand: you can reference a tracking upstream branch with the `@{upstream}` or `@{u}` shorthand. So if
+you’re on the master branch and it’s tracking `origin/master`, you can say something like `git merge @{u}` instead
+of `git merge origin/master` if you want.
 
-#### Pulling
+##### Pulling
+1. `git pull` is essentially a `git fetch` immediately followed by a `git merge` in most cases.
+1. Generally it’s better to simply use the `fetch` and `merge` commands explicitly as the magic of `git pull` can often be confusing.
 
-git pull which is essentially a git fetch immediately followed by a git merge in most cases.
-
-Generally it’s better to simply use the fetch and merge commands explicitly as the magic of git pull can often
-be confusing.
-
-#### Deleting Remote Branches
-1. `git push origin --delete serverfix`
-
-Basically all this does is remove the pointer from the server. The Git server will generally keep the data there for a
+##### Deleting Remote Branches
+1. `git push origin --delete serverfix`: Basically all this does is remove the pointer from the server. The Git server will generally keep the data there for a
 while until a garbage collection runs, so if it was accidentally deleted, it’s often easy to recover.
 
-## Rebasing
-Two main ways to integrate changes from one branch into another: the merge and the rebase.
+# Git Rebase
+##### Git Rebase Overview
+1. There are two main ways to integrate changes from one branch into another: **the merge and the rebase**.
 
-The easiest way to integrate the branches, as we’ve already covered, is the merge command. It performs a
-three-way merge between the two latest branch snapshots (C3 and C4) and the most recent common ancestor of the
-two (C2), creating a new snapshot (and commit).
+1. The easiest way to integrate the branches is the merge command. It performs a three-way merge between the two latest branch snapshots and the most recent common ancestor of the two, creating a new snapshot (and commit).
+1. There is another way: With the rebase command, you can take all the changes that were committed on one branch and replay them on another one.
+1. It works by going to the common ancestor of the two branches (the one you’re on and the one you’re rebasing onto), getting the diff introduced by each commit of the branch you’re on, saving those diffs to temporary files, resetting the current branch to the same commit as the branch you are rebasing onto, and finally applying each change in turn.
 
-However, there is another way: you can take the patch of the change that was introduced in C4 and reapply it on
-top of C3. In Git, this is called rebasing. With the rebase command, you can take all the changes that were committed
-on one branch and replay them on another one.
-
-It works by going to the common ancestor of the two branches (the one you’re on and the one you’re rebasing
-onto), getting the diff introduced by each commit of the branch you’re on, saving those diffs to temporary files,
-resetting the current branch to the same commit as the branch you are rebasing onto, and finally applying each
-change in turn.
 ```
 $ git checkout experiment
 $ git rebase master
 First, rewinding head to replay your work on top of it...
 Applying: added staged command
 ```
-At this point, you can go back to the master branch and do a fast-forward merge.
 
-here is no difference in the end product of the integration, but rebasing makes for a cleaner history.
-If you examine the log of a rebased branch, it looks like a linear history: it appears that all the work happened in series,
-even when it originally happened in parallel.
-Often, you’ll do this to make sure your commits apply cleanly on a remote branch – perhaps in a project to
-which you’re trying to contribute but that you don’t maintain. In this case, you’d do your work in a branch and then
-rebase your work onto origin/master when you were ready to submit your patches to the main project. That way, the
-maintainer doesn’t have to do any integration work—just a fast-forward or a clean apply.
-Note that the snapshot pointed to by the final commit you end up with, whether it’s the last of the rebased
-commits for a rebase or the final merge commit after a merge, is the same snapshot—it’s only the history that is
-different. Rebasing replays changes from one line of work onto another in the order they were introduced, whereas
-merging takes the endpoints and merges them.
+1. At this point, you can go back to the master branch and do a fast-forward merge. Here is no difference in the end product of the integration, but rebasing makes for a cleaner history.
+  * If you examine the log of a rebased branch, it looks like a linear history: it appears that all the work happened in series, even when it originally happened in parallel.
+  * Often, you’ll do this to make sure your commits apply cleanly on a remote branch – perhaps in a project to which you’re trying to contribute but that you don’t maintain. In this case, you’d do your work in a branch and then rebase your work onto `origin/master` when you were ready to submit your patches to the main project. That way, the maintainer doesn’t have to do any integration work—just a fast-forward or a clean apply.
+  * Note that the snapshot pointed to by the final commit you end up with, whether it’s the last of the rebased commits for a rebase or the final merge commit after a merge, is the same snapshot—it’s only the history that is different. 
+  * Rebasing replays changes from one line of work onto another in the order they were introduced, whereas merging takes the endpoints and merges them.
 
-You can also have your rebase replay on something other than the rebase target branch.
-Suppose you are on 'client' branch, you have 'master', 'server', 'client' branches, 
-Suppose you decide that you want to merge your client-side changes into your mainline for a release, but you
-want to hold off on the server-side changes until it’s tested further. You can take the changes on client that aren’t on
-server (C8 and C9) and replay them on your master branch by using the --onto option of git rebase:
+1. You can also have your rebase replay on something other than the rebase target branch.
+  * Suppose you are on 'client' branch, you have 'master', 'server', 'client' branches, 
+  * Suppose you decide that you want to merge your client-side changes into your mainline for a release, but you want to hold off on the server-side changes until it’s tested further. You can take the changes on 'client' that aren’t on 'server' and replay them on your master branch by using the `--onto` option of `git rebase`:
 
+```
 $ git rebase --onto master server client
-This basically says, “Check out the client branch, figure out the patches from the common ancestor of the client
-and server branches, and then replay them onto master.”
+```
+
+This basically says, “Check out the client branch, figure out the patches from the common ancestor of the 'client'
+and 'server' branches, and then replay them onto 'master'.”
 
 Now you can fast-forward your master branch:
+```
 $ git checkout master
 $ git merge client
+```
 
-checkout topicbranch and replays it onto the base branch. 
+1. Checkout 'topicbranch' and replays it onto the base branch. 
 `git rebase [basebranch] [topicbranch]`
 
 Now fast-forward the base branch
 `git checkout master`
 `git merge server`
 
-#### The Perils of Rebasing
+##### The Perils of Rebasing
 
-Do not rebase commits that exist outside your repository.
-
-When you rebase stuff, you’re abandoning existing commits and creating new ones that are similar but different.
-If you push commits somewhere and others pull them down and base work on them, and then you rewrite those
-commits with git rebase and push them up again, your collaborators will have to re-merge their work and things will
+1. Do not rebase commits that exist outside your repository.
+  * When you rebase stuff, you’re abandoning existing commits and creating new ones that are similar but different. If you push commits somewhere and others pull them down and base work on them, and then you rewrite those commits with git rebase and push them up again, your collaborators will have to re-merge their work and things will
 get messy when you try to pull their work back into yours.
+  * It turns out that in addition to the commit SHA checksum, Git also calculate a checksum that is based just on the patch introduced with the commit. This is called a “patch-id.” If you pull down work that was rewritten and rebase it on top of the new commits from your partner, Git can often successfully figure out what is uniquely yours and apply them back on top of the new branch.
+  * If you treat rebasing as a way to clean up and work with commits before you push them, and if you only rebase commits that have never been available publicly, then you’ll be fine. 
+  * If you rebase commits that have already been pushed publicly, and people may have based work on those commits, then you may be in for some frustrating trouble, and the scorn of your teammates.
+1. In general the way to get the best of both worlds is to rebase local changes you’ve made but haven’t shared yet before you push them in order to clean up your story, but never rebase anything you’ve pushed somewhere.
 
-It turns out that in addition to the commit SHA checksum, Git also calculate a checksum that is based just on the
-patch introduced with the commit. This is called a “patch-id.”
-If you pull down work that was rewritten and rebase it on top of the new commits from your partner, Git can often
-successfully figure out what is uniquely yours and apply them back on top of the new branch.
+1. A remote repository is generally a bare repository—a Git repository that has no working directory. Because the repository is only used as a collaboration point, there is no reason to have a snapshot checked out on disk; it’s just the Git data. In the simplest terms, a bare repository is the contents of your project’s .git directory and nothing else.
 
-If you treat rebasing as a way to clean up and work with commits before you push them, and if you only rebase
-commits that have never been available publicly, then you’ll be fine. If you rebase commits that have already been
-pushed publicly, and people may have based work on those commits, then you may be in for some frustrating trouble,
-and the scorn of your teammates.
-
-In general the way to get the best of both worlds is to rebase local changes you’ve made but haven’t shared yet
-before you push them in order to clean up your story, but never rebase anything you’ve pushed somewhere.
+# Distributed Git
+In Git, however, every developer is potentially both a node and a hub—that is, every developer can both contribute code to other repositories and maintain a public repository on which others can base their work and which they can contribute to.
 
 
-
-A remote repository is generally a bare repository—a Git repository that has no working directory. Because the
-repository is only used as a collaboration point, there is no reason to have a snapshot checked out on disk; it’s just the
-Git data. In the simplest terms, a bare repository is the contents of your project’s .git directory and nothing else.
-
-
-## Distributed Git
-In Git, however, every developer is potentially both a node and a hub—that is, every developer can both
-contribute code to other repositories and maintain a public repository on which others can base their work and which
-they can contribute to
-
-
-### Centralized Workflow
+##### Centralized Workflow
 1. One central hub,
 or repository, can accept code, and everyone synchronizes their work to it. A number of developers are nodes—
 consumers of that hub—and synchronize to that one place.
 
-### Integration-Manager Workflow
+##### Integration-Manager Workflow
 
 Because Git allows you to have multiple remote repositories, it’s possible to have a workflow where each developer
 has write access to their own public repository and read access to everyone else’s. This scenario often includes a
