@@ -41,86 +41,84 @@ compressed database in the Git directory and placed on disk for you to use or mo
 1. The staging area: The staging area is a file, generally contained in your Git directory, that stores information about what will go into
 your next commit. It’s sometimes referred to as the “index”, but it’s also common to refer to it as the staging area.
 
-# Git Basics
+# Git Configs
 
-## Git configs
+There are three levels of git config: system, global, local, each of these "levels" overwrites the values in the previous level.
+
 1. System config: `/etc/gitconfig`, applies to every user on the system and all their repositories
-1. Global config: `~/.gitconfig`, per user
+1. Global config: `~/.gitconfig`, applies to the user.
 1. Local config: `.git/config` under each repository, per repository
 
-Each of these "levels" overwrites the values in the previous level.
-
-#### Excludes file globally
-`~/lgitignore_global`: you want to ignore certain files for all repositories that you work with
+## Excludes file globally
+If you want to ignore certain files for all repositories that you work with, set them in the file: `~/lgitignore_global`: 
 
 ```
 *~
 .DS_Store
 ```
 
-..and you run git config --global core.excludesfile ~/.gitignore_global, Git will never again bother
-you about those files.
+..and you run git config `--global core.excludesfile ~/.gitignore_global`, Git will never again bother you about those files.
 
-#### Formatting and Whitespace
-Formatting and whitespace issues are some of the more frustrating and subtle problems that many developers
-encounter when collaborating, especially cross-platform. It’s very easy for patches or other collaborated work to
-introduce subtle whitespace changes because editors silently introduce them, and if your files ever touch a Windows
+## Formatting and Whitespace
+It’s very easy for patches or other collaborated work to introduce subtle whitespace changes because editors silently introduce them, and if your files ever touch a Windows
 system, their line endings might be replaced. Git has a few configuration options to help with these issues.
-core.autocrlf
-If you’re programming on Windows and working with people who are not (or vice versa), you’ll probably run into
-line-ending issues at some point. This is because Windows uses both a carriage-return character and a linefeed
-character for newlines in its files, whereas Mac and Linux systems use only the linefeed character. This is a subtle
-but incredibly annoying fact of cross-platform work; many editors on Windows silently replace existing LF-style line
-endings with CRLF, or insert both line-ending characters when the user hits the enter key.
+
+### core.autocrlf
+1. If you’re programming on Windows and working with people who are not (or vice versa), you’ll probably run into
+line-ending issues at some point. 
+  * This is because Windows uses both a carriage-return character and a linefeed character for newlines in its files, whereas Mac and Linux systems use only the linefeed character. This is a subtle but incredibly annoying fact of cross-platform work; many editors on Windows silently replace existing LF-style line endings with CRLF, or insert both line-ending characters when the user hits the enter key.
+  * Git can handle this by auto-converting CRLF line endings into LF when you add a file to the index, and vice versa when it checks out code onto your filesystem. 
+    * If you’re on a Windows machine, set `core.autocrlf` to true—this converts LF endings into CRLF when you check out code:
+    `$ git config --global core.autocrlf true`
+    * If you’re on a Linux or Mac system that uses LF line endings, then you don’t want Git to automatically convert them when you check out files; 
+  * However, if a file with CRLF endings accidentally gets introduced, then you may want Git to fix it. You can tell Git to convert CRLF to LF on commit but not the other way around by setting `core.autocrlf` to input:
+  `$ git config --global core.autocrlf input`
+
+This setup should leave you with CRLF endings in Windows checkouts, but LF endings on Mac and Linux systems and in the repository.
+  * If you’re a Windows programmer doing a Windows-only project, then you can turn off this functionality, recording the carriage returns in the repository by setting the config value to false:
+  `$ git config --global core.autocrlf false`
 
 
-Git can handle this by auto-converting CRLF line endings into LF when you add a file to the index, and vice versa
-when it checks out code onto your filesystem. You can turn on this functionality with the core.autocrlf setting. If
-you’re on a Windows machine, set it to true—this converts LF endings into CRLF when you check out code:
-$ git config --global core.autocrlf true
-If you’re on a Linux or Mac system that uses LF line endings, then you don’t want Git to automatically convert
-them when you check out files; however, if a file with CRLF endings accidentally gets introduced, then you may want
-Git to fix it. You can tell Git to convert CRLF to LF on commit but not the other way around by setting core.autocrlf
-to input:
-$ git config --global core.autocrlf input
-This setup should leave you with CRLF endings in Windows checkouts, but LF endings on Mac and Linux systems
-and in the repository.
-If you’re a Windows programmer doing a Windows-only project, then you can turn off this functionality,
-recording the carriage returns in the repository by setting the config value to false:
-$ git config --global core.autocrlf false
-
-
-#### core.whitespace
-Git comes preset to detect and fix some whitespace issues. It can look for six primary whitespace issues—three are
+### core.whitespace
+1. Git comes preset to detect and fix some whitespace issues. It can look for six primary whitespace issues—three are
 enabled by default and can be turned off, and three are disabled by default but can be activated.
-The ones that are turned on by default are blank-at-eol, which looks for spaces at the end of a line; blank-at-eof,
-which notices blank lines at the end of a file; and space-before-tab, which looks for spaces before tabs at the beginning
-of a line.
-The three that are disabled by default but can be turned on are indent-with-non-tab, which looks for lines that
-begin with spaces instead of tabs (and is controlled by the tabwidth option); tab-in-indent, which watches for tabs in
-the indentation portion of a line; and cr-at-eol, which tells Git that carriage returns at the end of lines are OK.
-You can tell Git which of these you want enabled by setting core.whitespace to the values you want on or off,
-separated by commas. You can disable settings by either leaving them out of the setting string or prepending a - in
-front of the value. For example, if you want all but cr-at-eol to be set, you can do this:
+1. The ones that are turned on by default are 
+  * blank-at-eol, which looks for spaces at the end of a line; 
+  * blank-at-eof, which notices blank lines at the end of a file; 
+  * space-before-tab, which looks for spaces before tabs at the beginning of a line.
+1. The three that are disabled by default but can be turned on are 
+  * indent-with-non-tab, which looks for lines that begin with spaces instead of tabs (and is controlled by the tabwidth option); 
+  * tab-in-indent, which watches for tabs in the indentation portion of a line; 
+  * cr-at-eol, which tells Git that carriage returns at the end of lines are OK.
+  
+1. You can tell Git which of these you want enabled by setting `core.whitespace` to the values you want on or off, separated by commas. You can disable settings by either leaving them out of the setting string or prepending a - in front of the value. For example, if you want all but `cr-at-eol` to be set, you can do this:
+```
 $ git config --global core.whitespace \
 trailing-space,space-before-tab,indent-with-non-tab
-Git will detect these issues when you run a git diff command and try to color them so you can possibly fix them
-before you commit. It will also use these values to help you when you apply patches with git apply. When you’re
+```
+
+1. Git will detect these issues when you run a `git diff` command and try to color them so you can possibly fix them
+before you commit. 
+1. It will also use these values to help you when you apply patches with `git apply`. When you’re
 applying patches, you can ask Git to warn you if it’s applying patches with the specified whitespace issues:
+```
 $ git apply --whitespace=warn <patch>
+```
 Or you can have Git try to automatically fix the issue before applying the patch:
+```
 $ git apply --whitespace=fix <patch>
-These options apply to the git rebase command as well. If you’ve committed whitespace issues but haven’t yet
-pushed upstream, you can run git rebase --whitespace=fix to have Git automatically fix whitespace issues as it’s
+```
+1. These options apply to the `git rebase` command as well. If you’ve committed whitespace issues but haven’t yet
+pushed upstream, you can run `git rebase --whitespace=fix` to have Git automatically fix whitespace issues as it’s
 rewriting the patches.
   
 ### Git Attributes
-Some of these settings can also be specified for a path, so that Git applies those settings only for a subdirectory or
-subset of files. These path-specific settings are called Git attributes and are set either in a .gitattributes file in
-one of your directories (normally the root of your project) or in the .git/info/attributes file if you don’t want the
+1. Some of these settings can also be specified for a path, so that Git applies those settings only for a subdirectory or
+subset of files. These path-specific settings are called Git attributes and are set either in a `.gitattributes` file in
+one of your directories (normally the root of your project) or in the `.git/info/attributes` file if you don’t want the
 attributes file committed with your project.
 
-Using attributes, you can do things like specify separate merge strategies for individual files or directories in your
+`. Using attributes, you can do things like specify separate merge strategies for individual files or directories in your
 project, tell Git how to diff non-text files, or have Git filter content before you check it into or out of Git.
 
 
