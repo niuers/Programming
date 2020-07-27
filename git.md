@@ -50,7 +50,7 @@ There are three levels of git config: system, global, local, each of these "leve
 1. Global config: `~/.gitconfig`, applies to the user.
 1. Local config: `.git/config` under each repository, per repository
 
-## Excludes file globally
+### Excludes file globally
 If you want to ignore certain files for all repositories that you work with, set them in the file: `~/lgitignore_global`: 
 
 ```
@@ -60,7 +60,7 @@ If you want to ignore certain files for all repositories that you work with, set
 
 ..and you run git config `--global core.excludesfile ~/.gitignore_global`, Git will never again bother you about those files.
 
-## Git Aliases
+### Git Aliases
 1. Examples of Git Aliases 
 ```
 $ git config --global alias.co checkout
@@ -85,11 +85,11 @@ $ git config --global alias.visual "!gitk"
 ```
 
 
-## Formatting and Whitespace
+### Formatting and Whitespace
 It’s very easy for patches or other collaborated work to introduce subtle whitespace changes because editors silently introduce them, and if your files ever touch a Windows
 system, their line endings might be replaced. Git has a few configuration options to help with these issues.
 
-### core.autocrlf
+##### core.autocrlf
 1. If you’re programming on Windows and working with people who are not (or vice versa), you’ll probably run into
 line-ending issues at some point. 
   * This is because Windows uses both a carriage-return character and a linefeed character for newlines in its files, whereas Mac and Linux systems use only the linefeed character. This is a subtle but incredibly annoying fact of cross-platform work; many editors on Windows silently replace existing LF-style line endings with CRLF, or insert both line-ending characters when the user hits the enter key.
@@ -105,7 +105,7 @@ This setup should leave you with CRLF endings in Windows checkouts, but LF endin
   `$ git config --global core.autocrlf false`
 
 
-### core.whitespace
+##### core.whitespace
 1. Git comes preset to detect and fix some whitespace issues. It can look for six primary whitespace issues—three are
 enabled by default and can be turned off, and three are disabled by default but can be activated.
 1. The ones that are turned on by default are 
@@ -144,7 +144,7 @@ subset of files. These path-specific settings are called Git attributes and are 
 one of your directories (normally the root of your project) or in the `.git/info/attributes` file if you don’t want the
 attributes file committed with your project.
 
-`. Using attributes, you can do things like specify separate merge strategies for individual files or directories in your
+1. Using attributes, you can do things like specify separate merge strategies for individual files or directories in your
 project, tell Git how to diff non-text files, or have Git filter content before you check it into or out of Git.
 
 
@@ -167,19 +167,6 @@ It turns out that Git stages a file exactly as it is when you run the `git add` 
 looks in your working directory when you run `git commit`. If you modify a file after you run `git add`, you have to run `git add` again to stage the latest version of the file
 Remember that the commit records the snapshot you set up in your staging area. Anything you didn’t stage is still sitting there modified; you can do another commit to add it to your history. Every time you perform a commit, you’re recording a snapshot of your project that you can revert to or compare to later.
 
-# Git Log
-
-1. `git log -p -2`
-1. `git log --stat`
-1. `git log --pretty=oneline --graph`
-1. `git log --pretty=format: "%h - %an, %ar : %s" --graph`
-1. `git log --since=2.weeks --committer= --grep= --all-match`
-1. `git log --until=2.weeks`
-1. `git log --before=2.weeks`
-1. `git log -Sfunction_name`
-1. `git log --abbrev-commit --pretty=oneline`
-
-
 ### Undoing Things
 1. `git commit --amend`
 
@@ -195,6 +182,21 @@ Remember, anything that is committed in Git can almost always be recovered. Even
 branches that were deleted or commits that were overwritten with an --amend commit can be recovered (see the
 section on data recovery). However, anything you lose that was never committed is likely never to be seen again.
 
+
+# Git Log
+
+1. `git log -p -2`
+1. `git log --stat`
+1. `git log --pretty=oneline --graph`
+1. `git log --pretty=format: "%h - %an, %ar : %s" --graph`
+1. `git log --since=2.weeks --committer= --grep= --all-match`
+1. `git log --until=2.weeks`
+1. `git log --before=2.weeks`
+1. `git log -Sfunction_name`
+1. `git log --abbrev-commit --pretty=oneline`
+
+
+
 # Git Remotes
 
 1. `git remote -v`: list remote repositories
@@ -208,7 +210,7 @@ section on data recovery). However, anything you lose that was never committed i
 1. If you have a branch set up to track a remote branch , you can use the `git pull` command to automatically fetch and then merge a remote branch into your current branch.
 Running `git pull` generally fetches data from the server you originally cloned from and automatically tries to merge it into the code you’re currently working on.
 
-## Pushing to Your Remotes
+### Pushing to Your Remotes
 1. `git push [remote-name] [branch-name]`
 1. `git remote show origin`: inspect a remote
 
