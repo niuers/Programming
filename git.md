@@ -3,12 +3,12 @@
 **[Git Configs](#git-configs)**<br>
 **[Git Process](#git-process)**<br>
 **[Git Log](#git-log)**<br>
-- [Undoing Things](#undoing-things)<br>
 **[Git Remotes](#git-remotes)**<br>
 **[Git Tag](#git-tag)**<br>
 **[Git Branching](#git-branching)**<br>
 **[Git Rebase](#git-rebase)**<br>
 **[Distributed Git](#distributed-git)**<br>
+**[Tricks](#tricks)**<br>
 **[Git GUI](#git-gui)**<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
@@ -407,56 +407,36 @@ In Git, however, every developer is potentially both a node and a hub—that is,
 
 
 ##### Centralized Workflow
-1. One central hub,
-or repository, can accept code, and everyone synchronizes their work to it. A number of developers are nodes—
-consumers of that hub—and synchronize to that one place.
+1. One central hub, or repository, can accept code, and everyone synchronizes their work to it. A number of developers are nodes—consumers of that hub—and synchronize to that one place.
 
 ##### Integration-Manager Workflow
+1. Because Git allows you to have multiple remote repositories, it’s possible to have a workflow where each developer has write access to their own public repository and read access to everyone else’s. This scenario often includes a canonical repository that represents the “official” project. 
+1. To contribute to that project, you create your own public clone of the project and push your changes to it. Then, you can send a request to the maintainer of the main project to pull in your changes. 
+1. The maintainer can then add your repository as a remote, test your changes locally, merge them into their branch, and push back to their repository.
 
-Because Git allows you to have multiple remote repositories, it’s possible to have a workflow where each developer
-has write access to their own public repository and read access to everyone else’s. This scenario often includes a
-canonical repository that represents the “official” project. To contribute to that project, you create your own public
-clone of the project and push your changes to it. Then, you can send a request to the maintainer of the main project to
-pull in your changes. The maintainer can then add your repository as a remote, test your changes locally, merge them
-into their branch, and push back to their repository.
-
-This is a very common workflow with hub-based tools such as GitHub or GitLab, where it’s easy to fork a project
-and push your changes into your fork for everyone to see. One of the main advantages of this approach is that you can
-continue to work, and the maintainer of the main repository can pull in your changes at any time. Contributors don’t
+1. This is a very common workflow with hub-based tools such as GitHub or GitLab, where it’s easy to fork a project and push your changes into your fork for everyone to see. One of the main advantages of this approach is that you can continue to work, and the maintainer of the main repository can pull in your changes at any time. Contributors don’t
 have to wait for the project to incorporate their changes—each party can work at their own pace.
 
-### Dictator and Lieutenants Workflow
-This is a variant of a multiple-repository workflow. It’s generally used by huge projects with hundreds of collaborators;
-one famous example is the Linux kernel. Various integration managers are in charge of certain parts of the repository;
-they’re called lieutenants. All the lieutenants have one integration manager known as the benevolent dictator.
-The benevolent dictator’s repository serves as the reference repository from which all the collaborators need to pull.
+##### Dictator and Lieutenants Workflow
+1. This is a variant of a multiple-repository workflow. 
+1. It’s generally used by huge projects with hundreds of collaborators;
+  * One famous example is the Linux kernel. 
+  * Various integration managers are in charge of certain parts of the repository; they’re called lieutenants. 
+  * All the lieutenants have one integration manager known as the benevolent dictator. The benevolent dictator’s repository serves as the reference repository from which all the collaborators need to pull.
 
-## Contributing to a Project
-Some of the variables involved are active contributor
-count, chosen workflow, your commit access, and possibly the external contribution method.
+##### Contributing to a Project
+1. Some of the variables involved are active contributor count, chosen workflow, your commit access, and possibly the external contribution method.
 
+##### Commit Guidelines
 
+1. First, you don’t want to submit any whitespace errors. Git provides an easy way to check for this—before you commit, run `git diff --check`, which identifies possible whitespace errors and lists them for you.
 
+1. Next, try to make each commit a logically separate changeset. If some of the changes modify the same file, try to use `git add --patch` to partially stage files.
 
-### Commit Guidelines
+1. The last thing to keep in mind is the commit message. Getting in the habit of creating quality commit messages makes using and collaborating with Git a lot easier. As a general rule, your messages should start with a single line that’s no more than about 50 characters and that describes the changeset concisely, followed by a blank line, followed by a more detailed explanation.
 
-1. First, you don’t want to submit any whitespace errors. Git provides an easy way to check for this—before you
-commit, run git diff --check, which identifies possible whitespace errors and lists them for you.
-
-1. Next, try to make each commit a logically separate changeset.
-
-If some of the changes modify the same file, try to use git
-add --patch to partially stage files.
-
-1. The last thing to keep in mind is the commit message. Getting in the habit of creating quality commit messages
-makes using and collaborating with Git a lot easier. As a general rule, your messages should start with a single line
-that’s no more than about 50 characters and that describes the changeset concisely, followed by a blank line, followed
-by a more detailed explanation.
-
-The Git project requires that the more detailed explanation include your motivation
-for the change and contrast its implementation with previous behavior—this is a good guideline to follow. It’s also a
-good idea to use the imperative present tense in these messages. In other words, use commands. Instead of “I added
-tests for” or “Adding tests for,” use “Add tests for.”
+  * The Git project requires that the more detailed explanation include your motivation for the change and contrast its implementation with previous behavior—this is a good guideline to follow. 
+  * It’s also a good idea to use the imperative present tense in these messages. In other words, use commands. Instead of “I added tests for” or “Adding tests for,” use “Add tests for.”
 
 ```
 Short (50 chars or less) summary of changes
@@ -474,57 +454,46 @@ preceded by a single space, with blank lines in
 between, but conventions vary here
 ```
 
-The Git project has well-formatted commit messages—try running git log --no-merges there to see what a nicely
-formatted project-commit history looks like.
+1. The Git project has well-formatted commit messages—try running `git log --no-merges` there to see what a nicely formatted project-commit history looks like.
 
-#### Private Small Team
-“Private,” in this context, means closed-source—not accessible to the outside world. You and the other developers all have push access
+##### Private Small Team
+1. “Private,” in this context, means closed-source—not accessible to the outside world. You and the other developers all have push access
 to the repository.
 
-Jessica thinks her topic branch is ready, but she wants to know what she has to merge into her work so that she
-can push. She runs git log to find out:
+1. Jessica thinks her topic branch is ready, but she wants to know what she has to merge into her work so that she can push. She runs git log to find out:
+```
 $ git log --no-merges issue54..origin/master
 commit 738ee872852dfaa9d6634e0dea7a324040193016
 Author: John Smith <jsmith@example.com>
 Date: Fri May 29 16:01:27 2009 -0700
 removed invalid default value
-The issue54..origin/master syntax is a log filter that asks Git to only show the list of commits that are on the
-latter branch (in this case origin/master) that are not on the first branch (in this case issue54).
+```
 
-#### Private Managed Team
-You’ll learn how to work in an
-environment where small groups collaborate on features and then those team-based contributions are integrated by
-another party.
+The issue54..origin/master syntax is a log filter that asks Git to only show the list of commits that are on the latter branch (in this case origin/master) that are not on the first branch (in this case issue54).
 
+##### Private Managed Team
+You’ll learn how to work in an environment where small groups collaborate on features and then those team-based contributions are integrated by another party.
 In this scenario, all work is done in team-based branches and pulled together by the integrators later
 
 `git push -u origin featureB:featureBee`
 
-This is called a refspec. Also notice the -u flag; this is short for --set-upstream, which configures the branches
-for easier pushing and pulling later.
+This is called a `refspec`. Also notice the `-u` flag; this is short for `--set-upstream`, which configures the branches for easier pushing and pulling later.
 
-#### Public Project, Fork
+##### Public Project, Fork
 1. You clone the public project, make a feature branch, work on it.
 1. You create a fork of that project. 
 1. Make the fork your second remote
 `git remote add myfork (url)`
 
 1. Push your work to the new remote
-
-It’s easiest to push the remote branch you’re working on up to your
-repository, rather than merging into your master branch and pushing that up. The reason is that if the work isn’t
-accepted or is cherry picked, you don’t have to rewind your master branch. If the maintainers merge, rebase, or
-cherry-pick your work, you’ll eventually get it back via pulling from their repository anyhow:
+  * It’s easiest to push the remote branch you’re working on up to your repository, rather than merging into your master branch and pushing that up. The reason is that if the work isn’t accepted or is cherry picked, you don’t have to rewind your master branch. If the maintainers merge, rebase, or cherry-pick your work, you’ll eventually get it back via pulling from their repository anyhow:
+  
 ```
 $ git push -u myfork featureA
 ```
 
-When your work has been pushed up to your fork, you need to notify the maintainer. This is often called a
-pull request.
-
-On a project for which you’re not the maintainer, it’s generally easier to have a branch like master always track
-origin/master and to do your work in topic branches that you can easily discard if they’re rejected. Having work
-themes isolated into topic branches also makes it easier for you to rebase your work if the tip of the main repository
+1. When your work has been pushed up to your fork, you need to notify the maintainer. This is often called a **pull request**.
+1. On a project for which you’re not the maintainer, it’s generally easier to have a branch like master always track origin/master and to do your work in topic branches that you can easily discard if they’re rejected. Having work themes isolated into topic branches also makes it easier for you to rebase your work if the tip of the main repository
 has moved in the meantime and your commits no longer apply cleanly.
 
 ```
@@ -535,15 +504,10 @@ $ git checkout -b featureB origin/master
 git push -f myfork featureA
 ```
 
-specify the -f to your push command in order to be able to replace
-the featureA branch on the server with a commit that isn’t a descendant of it. An alternative would be to push this
-new work to a different branch on the server (perhaps called featureAv2).
+specify the `-f` to your push command in order to be able to replace the `featureA` branch on the server with a commit that isn’t a descendant of it. An alternative would be to push this new work to a different branch on the server (perhaps called featureAv2).
 
-Let’s look at one more possible scenario: the maintainer has looked at work in your second branch and likes the
-concept but would like you to change an implementation detail. You’ll also take this opportunity to move the work to
-be based off the project’s current master branch. You start a new branch based off the current origin/master branch,
-squash the featureB changes there, resolve any conflicts, make the implementation change, and then push that up as
-a new branch:
+1. Let’s look at one more possible scenario: the maintainer has looked at work in your second branch and likes the concept but would like you to change an implementation detail. You’ll also take this opportunity to move the work to be based off the project’s current master branch. You start a new branch based off the current origin/master branch, squash the featureB changes there, resolve any conflicts, make the implementation change, and then push that up as a new branch:
+
 ```
 $ git checkout -b featureBv2 origin/master^{}
 $ git merge --no-commit --squash featureB
@@ -557,10 +521,9 @@ top of the branch you’re on. The --no-commit option tells Git not to automatic
 introduce all the changes from another branch and then make more changes before recording the new commit.
 
 
-### Maintaining a Project
+##### Maintaining a Project
 
-When you’re thinking of integrating new work, it’s generally a good idea to try it out in a topic branch—a temporary
-branch specifically made to try out that new work. This way, it’s easy to tweak a patch individually and leave it if
+1. When you’re thinking of integrating new work, it’s generally a good idea to try it out in a topic branch—a temporary branch specifically made to try out that new work. This way, it’s easy to tweak a patch individually and leave it if
 it’s not working until you have time to come back to it. If you create a simple branch name based on the theme of
 the work you’re going to try
 you can create the branch based off your master branch like this:
@@ -569,7 +532,7 @@ you can create the branch based off your master branch like this:
 Or, if you want to also switch to it immediately, you can use the checkout -b option:
 `$ git checkout -b sc/ruby_client master`
 
-#### Checking out remote branches
+##### Checking out remote branches
 
 you can test it by adding the remote and checking out that branch locally:
 ```
@@ -629,7 +592,7 @@ $ git diff master...contrib
 This command shows you only the work your current topic branch has introduced since its common ancestor
 with master. That is a very useful syntax to remember.
 
-#### Integrating Contributed Work
+##### Integrating Contributed Work
 1. Merging Workflows
 
 One simple workflow merges your work into your master branch. In this scenario, you have a master branch
@@ -670,8 +633,7 @@ the branch you’re currently on.
 
 ##### Generating a Build Number
 
-if
-you want to have a human-readable name to go with a commit, you can run git describe on that commit. Git gives you
+if you want to have a human-readable name to go with a commit, you can run git describe on that commit. Git gives you
 the name of the nearest tag with the number of commits on top of that tag and a partial SHA-1 value of the commit
 you’re describing:
 ```
@@ -717,7 +679,7 @@ $ git shortlog --no-merges master --not v1.0.1
 
 
 
-## Tricks
+# Tricks
 ### Branch References
 The most straightforward way to specify a commit requires that it have a branch reference pointed at it.
 If you want to see which specific SHA a branch points to, or if you want to see what any of these examples
