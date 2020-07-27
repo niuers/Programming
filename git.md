@@ -1,13 +1,15 @@
 ### Table of Contents
 **[Git Overview](#git-overview)**<br>
 **[Git Basics](#git-basics)**<br>
-[Git configs](#git0configs)<br>
-[Undoing Things](#undoing-things)<br>
-[Git Remote](#git-remote)<br>
-**[Git Branching](#git-branching)<br>
-[Rebasing](#rebasing)<br>
-[Distributed Git](#distributed-git)<br>
-**[Git GUI](#git-gui)<br>
+- [Git configs](#git0configs)<br>
+- [Undoing Things](#undoing-things)<br>
+- [Git Remote](#git-remote)<br>
+
+**[Git Branching](#git-branching)**<br>
+- [Rebasing](#rebasing)<br>
+- [Distributed Git](#distributed-git)<br>
+
+**[Git GUI](#git-gui)**<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
 **[References](#references)**<br>
