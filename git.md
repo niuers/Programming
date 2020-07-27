@@ -194,7 +194,8 @@ section on data recovery). However, anything you lose that was never committed i
 1. `git log --before=2.weeks`
 1. `git log -Sfunction_name`
 1. `git log --abbrev-commit --pretty=oneline`
-
+1. `git log --oneline --decorate`:  shows where the branch pointers are pointing.
+1. `git log --oneline --decorate --graph --all`: 
 
 
 # Git Remotes
@@ -235,119 +236,80 @@ information is kept.
 
 
 
-
 # Git Branching
-1. That’s basically what a branch in Git is: a simple pointer or reference to the head of a line of work.
-1. The HEAD file is a symbolic reference to the branch you’re currently on. By symbolic reference, we mean that
+### Git Branch Overview
+1. A branch in Git is a simple movable pointer or reference to the head of a line of work (or to one of the commits).
+1. The **HEAD** file is a symbolic reference to the branch you’re currently on. By symbolic reference, we mean that
 unlike a normal reference, it doesn’t generally contain a SHA-1 value but rather a pointer to another reference.
-  1. When you run git commit, it creates the commit object, specifying the parent of that commit object to be
+1. When you run `git commit`, it creates the commit object, specifying the parent of that commit object to be
 whatever SHA-1 value the reference in HEAD points to.
+1. When you make a commit, Git stores a commit object that contains a pointer to the snapshot of the content you staged. This object also contains the author’s name and email, the message that you typed, and pointers to the commit or commits that directly came before this commit (its parent or parents): zero parents for the initial
+commit, one parent for a normal commit, and multiple parents for a commit that results from a merge of two or more branches.
+1. To visualize this, let’s assume that you have a directory containing three files, and you stage them all and commit.
+  * Staging the files checksums each one, stores that version of the file in the Git repository (Git refers to them as blobs), and adds that checksum to the staging area:
+  ```$ git add README test.rb LICENSE```
+  * When you create the commit by running `git commit`, Git checksums each subdirectory and stores those tree objects in the Git repository. Git then creates a commit object that has the metadata and a pointer to the root project tree so it can re-create that snapshot when needed.
+  ```$ git commit -m 'initial commit of my project'```
 
-When you make a commit, Git stores a commit object that contains a pointer to the snapshot of the content
-you staged. This object also contains the author’s name and email, the message that you typed, and pointers to
-the commit or commits that directly came before this commit (its parent or parents): zero parents for the initial
-commit, one parent for a normal commit, and multiple parents for a commit that results from a merge of two or
-more branches.
+1. Your Git repository now contains five objects: 
+  * One blob for the contents of each of your three files
+  * One tree that lists the contents of the directory and specifies which file names are stored as which blobs
+  * One commit with the pointer to that root tree and all the commit metadata.
 
-To visualize this, let’s assume that you have a directory containing three files, and you stage them all and commit.
-Staging the files checksums each one (the SHA-1 hash we mentioned in Chapter 1), stores that version of the file in the
-Git repository (Git refers to them as blobs), and adds that checksum to the staging area:
-$ git add README test.rb LICENSE
-$ git commit -m 'initial commit of my project'
-When you create the commit by running git commit, Git checksums each subdirectory (in this case, just the
-root project directory) and stores those tree objects in the Git repository. Git then creates a commit object that has the
-metadata and a pointer to the root project tree so it can re-create that snapshot when needed.
-Your Git repository now contains five objects: one blob for the contents of each of your three files, one tree that
-lists the contents of the directory and specifies which file names are stored as which blobs, and one commit with the
-pointer to that root tree and all the commit metadata.
-
-If you make some changes and commit again, the next commit stores a pointer to the commit that came
-immediately before it.
-
-A branch in Git is simply a lightweight movable pointer to one of these commits.
+1. If you make some changes and commit again, the next commit stores a pointer to the commit that came immediately before it.
 
 
-#### HEAD
+
+### HEAD
 1. `git branch testing`: This creates a new pointer at the same commit you’re currently on.
-How does Git know what branch you’re currently on? It keeps a special pointer called HEAD. In Git, this is a
-pointer to the local branch you’re currently on. In this case, you’re still on master. The git branch command only
-created a new branch—it didn’t switch to that branch.
 
-1. `git log --oneline --decorate`
+How does Git know what branch you’re currently on? It keeps a special pointer called HEAD. In Git, this is a pointer to the local branch you’re currently on. In this case, you’re still on master. The git branch command only created a new branch—it didn’t switch to that branch.
 
-You can easily see this by running a simple git log command that shows you where the branch pointers are
-pointing. This option is called `--decorate`.
+1. `git checkout testing`: This moves HEAD to point to the `testing` branch, basically switch the branch.
+1. Create a branch and switch to it in one command: `git checkout -b testing`
 
-1.  Switch Branches
-`git checkout testing`: This moves HEAD to point to the testing branch.
+### Switching branches changes files in your working directory
+1. It’s important to note that when you switch branches in Git, files in your working directory will change. If you switch to an older branch, your working directory will be reverted to look like it did the last time you committed on that branch. If Git cannot do it cleanly, it will not let you switch at all.
 
-1. Create a branch and switch to it: `git checkout -b testing`
+1. Branches are cheap to create and destroy: Because a branch in Git is in actuality a simple file that contains the 40 character SHA-1 checksum of the commit it points to. Creating a new branch is as quick and simple as writing 41 bytes to a file (40 characters and a newline).
 
-##### Switching branches changes files in your working directory
-It’s important to note that when you switch branches in Git, files in your working directory will change. If you
-switch to an older branch, your working directory will be reverted to look like it did the last time you committed on
-that branch. If Git cannot do it cleanly, it will not let you switch at all.
-
-`git log --oneline --decorate --graph --all`
-
-1. Because a branch in Git is in actuality a simple file that contains the 40 character SHA-1 checksum of the commit
-it points to, branches are cheap to create and destroy. Creating a new branch is as quick and simple as writing 41 bytes to a file (40 characters and a newline).
 `cat .git/refs/heads/testing`
 
-#### Basic Branching and Merging
 
-However, before you can switch branch, note that if your working directory or staging area has uncommitted changes that
-conflict with the branch you’re checking out, Git won’t let you switch branches. It’s best to have a clean working state
-when you switch branches. There are ways to get around this (namely, stashing and commit amending) that we’ll cover
-later on.
+1. However, before you can switch branch, note that if your working directory or staging area has uncommitted changes that conflict with the branch you’re checking out, Git won’t let you switch branches. It’s best to have a clean working state when you switch branches. There are ways to get around this (namely, `stashing` and `commit amending`)
 
-This is an important point to remember: when you switch branches, Git resets
-your working directory to look like it did the last time you committed on that branch. It adds, removes, and modifies
-files automatically to make sure your working copy is what the branch looked like on your last commit to it.
+1. **This is an important point to remember**: when you switch branches, Git resets your working directory to look like it did the last time you committed on that branch. It adds, removes, and modifies files automatically to make sure your working copy is what the branch looked like on your last commit to it.
 
-1. Merge
-Suppose you are on 'master' branch: `git merge hotfix`
 
-point. Because the commit on the branch you’re on isn’t a direct ancestor of the branch
-you’re merging in, Git has to do some work. In this case, Git does a simple three-way merge, using the two snapshots
-pointed to by the branch tips and the common ancestor of the two. Instead of just moving the branch pointer forward, Git creates a new snapshot that results from this three-way
-merge and automatically creates a new commit that points to it. This is referred to as a merge commit, and is special
-in that it has more than one parent
+### Basic Branching and Merging
 
-1. Merge Conflicts:
+1. Merge with a feature branch. Suppose you are on 'master' branch: `git merge hotfix`
+  * Because the commit on the branch you’re on isn’t a direct ancestor of the branch you’re merging in, Git has to do some work. In this case, Git does a simple **three-way merge**, using the two snapshots pointed to by the branch tips and the common ancestor of the two. 
+  * Instead of just moving the branch pointer forward, Git creates a new snapshot that results from this three-way merge and automatically creates a new commit that points to it. This is referred to as a **merge commit**, and is special in that it has more than one parent. 
 
-`git mergetool`
+1. Merge Conflicts: `git mergetool`
 
-##### Branch Management
+### Branch Management
 1. `git branch -v`: see the last commit on each branch
-1. `git branch --merged`: Filter the list to branches that you have or have not yet merged (--no-merged) into the branch you're currently on.
+1. `git branch --merged`: Filter the list to branches that you have or have not yet merged (`--no-merged`) into the branch you're currently on.
 
-#### Branch Workflow
+### Branch Workflow
+
 ##### Long-Running Branches
 
-1. The idea
-is that your branches are at various levels of stability; when they reach a more stable level, they’re merged into the
-branch above them. Again, having multiple long-running branches isn’t necessary, but it’s often helpful, especially
-when you’re dealing with very large or complex projects.
+The idea is that your branches are at various levels of stability; when they reach a more stable level, they’re merged into the branch above them. Again, having multiple long-running branches isn’t necessary, but it’s often helpful, especially when you’re dealing with very large or complex projects.
 
 ##### Topic Branches
 ##### Remote Branches
-Remote branches are references (pointers) to the state of branches in your remote repositories. They’re local branches
-that you can’t move; they’re moved automatically for you whenever you do any network communication. Remote
-branches act as bookmarks to remind you where the branches on your remote repositories were the last time you
-connected to them.
+Remote branches are references (pointers) to the state of branches in your remote repositories. They’re local branches that you can’t move; they’re moved automatically for you whenever you do any network communication. Remote branches act as bookmarks to remind you where the branches on your remote repositories were the last time you connected to them.
 
-#### "ORIGIN" is NOT special
-Just like the branch name “master” does not have any special meaning in Git, neither does “origin”. While
-“master” is the default name for a starting branch when you run git init which is the only reason it’s widely
-used, “origin” is the default name for a remote when you run git clone. If you run git clone -o booyah
-instead, then you will have booyah/master as your default remote branch.
+##### "ORIGIN" is NOT special
 
-To synchronize your work, you run a git fetch origin command. This command looks up which server “origin”
+To synchronize your work, you run a `git fetch origin` command. This command looks up which server “origin”
 is (in this case, it’s git.ourcompany.com), fetches any data from it that you don’t yet have, and updates your local
 database, moving your origin/master pointer to its new, more up-to-date position.
 
-#### Pushing
+##### Pushing
 1. `git push (remote) (branch)`:
 `git push origin serverfix`: Git automatically expands the `serverfix` branch name out to `refs/heads/
 serverfix:refs/heads/serverfix`, which means, “Take my `serverfix` local branch and push it to update the remote’s
@@ -365,7 +327,7 @@ Branch serverfix set up to track remote branch serverfix from origin.
 Switched to a new branch 'serverfix'
 ```
 
-#### Tracking Branches
+##### Tracking Branches
 1. Checking out a local branch from a remote branch automatically creates what is called a “tracking branch”
 (or sometimes an “upstream branch”). Tracking branches are local branches that have a direct relationship to a
 remote branch. If you’re on a tracking branch and type git push, Git automatically knows which server and branch
