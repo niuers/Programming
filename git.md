@@ -1712,9 +1712,7 @@ because you’re most likely to need faster access to the most recent version of
 1. `HEAD`: points to the branch you currently have checked out
 1. `index`: where Git stores your staging area information
 
-### Transfer Protocols
-#### The Dumb Protocol
-#### The Smart Protocol
+
 
 ## Git Usage Examples
 
