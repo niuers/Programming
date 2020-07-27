@@ -1,16 +1,23 @@
 ### Table of Contents
 **[Git Overview](#git-overview)**<br>
 **[Git Basics](#git-basics)**<br>
+[Git configs](#git0configs)<br>
+[Undoing Things](#undoing-things)<br>
+[Git Remote](#git-remote)<br>
+**[Git Branching](#git-branching)<br>
+[Rebasing](#rebasing)<br>
+[Distributed Git](#distributed-git)<br>
+**[Git GUI](#git-gui)<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
+**[References](#references)**<br>
 
 
-## Git Overview
+# Git Overview
 
 ### Git is a Distributed Version Control System (DVCS)
 1. Each client not only checks out the latest snapshot of the files, but a full mirror of the repository.
 1. Every checkout is a full backup of all the data.
-
 
 ### Nearly Every Operation in Git is Local
 
@@ -32,8 +39,9 @@ compressed database in the Git directory and placed on disk for you to use or mo
 1. The staging area: The staging area is a file, generally contained in your Git directory, that stores information about what will go into
 your next commit. It’s sometimes referred to as the “index”, but it’s also common to refer to it as the staging area.
 
-## Git Basics
-### Git configs
+# Git Basics
+
+## Git configs
 1. System config: `/etc/gitconfig`, applies to every user on the system and all their repositories
 1. Global config: `~/.gitconfig`, per user
 1. Local config: `.git/config` under each repository, per repository
@@ -115,9 +123,7 @@ project, tell Git how to diff non-text files, or have Git filter content before 
 
 
 
-
-  
-### Getting a Git Repository
+## Getting a Git Repository
 1. 'git init'
 1. 'git clone'
 
@@ -150,7 +156,7 @@ recording a snapshot of your project that you can revert to or compare to later.
 1. `git log --abbrev-commit --pretty=oneline`
 
 
-### Undoing Things
+## Undoing Things
 1. `git commit --amend`
 
 This command takes your staging area and uses it for the commit. If you’ve made no changes since your last
@@ -164,7 +170,8 @@ Remember, anything that is committed in Git can almost always be recovered. Even
 branches that were deleted or commits that were overwritten with an --amend commit can be recovered (see the
 section on data recovery). However, anything you lose that was never committed is likely never to be seen again.
 
-### Git Remotes
+## Git Remotes
+
 1. `git remote -v`:
 1. Add remote repository
 `git remote add pb https://github.com/paulboone/ticgit`
@@ -205,7 +212,6 @@ Tag commit
 `git tag -a v1.2 9fceb02`
 
 
-  
 1. Lightweight Tag:  lightweight tag is very much like a branch that doesn’t change—it’s just a pointer to a specific commit
 `git tag v1.4-lw`
 
@@ -216,7 +222,7 @@ Sharing Tags: By default, the git push command doesn’t transfer tags to remote
 1. `git push origin [tagname]`
 1. `git push origin --tags`
 
-#### Git Aliases
+### Git Aliases
 1. 
 ```
 $ git config --global alias.co checkout
@@ -243,7 +249,7 @@ $ git config --global alias.visual "!gitk"
 
 
 
-## Git Branching
+# Git Branching
 1. That’s basically what a branch in Git is: a simple pointer or reference to the head of a line of work.
 1. The HEAD file is a symbolic reference to the branch you’re currently on. By symbolic reference, we mean that
 unlike a normal reference, it doesn’t generally contain a SHA-1 value but rather a pointer to another reference.
@@ -410,7 +416,7 @@ be confusing.
 Basically all this does is remove the pointer from the server. The Git server will generally keep the data there for a
 while until a garbage collection runs, so if it was accidentally deleted, it’s often easy to recover.
 
-#### Rebasing
+## Rebasing
 Two main ways to integrate changes from one branch into another: the merge and the rebase.
 
 The easiest way to integrate the branches, as we’ve already covered, is the merge command. It performs a
@@ -1609,7 +1615,7 @@ another Git repository. This lets you clone another repository into your project
 
 
 
-## Git GUI
+# Git GUI
 ### gitk
 A powerful GUI shell over `git log` and `git grep`. This is the tool
 to use when you’re trying to find something that happened in the past, or visualize your project’s history.
@@ -1655,7 +1661,7 @@ when you’re anywhere inside a Git-controlled project
 
 
 
-## Git Internals
+# Git Internals
 
 ### Git is a Content-Addressable Filesystem
 1. Content-addressable filesystem: means that it's key-value data store. You can insert any kind of content into it, and it will give you back a key that you can use to retrieve the content again at any time. 
@@ -1666,7 +1672,6 @@ when you’re anywhere inside a Git-controlled project
 or less to inodes or file contents. A single tree object contains one or more tree entries, each of which contains
 a SHA-1 pointer to a blob or subtree with its associated mode, type, and filename.
 
-### Plumbing and Porcelain
 ### Git Objects
 #### Blob Objects
 1. `objects`: stores all the content for your database
@@ -1715,4 +1720,6 @@ because you’re most likely to need faster access to the most recent version of
 
 
 
+# References
+1. Scott Chacon and Ben Straub, Pro Git, Second Edition, 2014.
 
