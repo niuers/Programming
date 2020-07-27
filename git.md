@@ -530,6 +530,9 @@ The benevolent dictator’s repository serves as the reference repository from w
 Some of the variables involved are active contributor
 count, chosen workflow, your commit access, and possibly the external contribution method.
 
+
+
+
 ### Commit Guidelines
 
 1. First, you don’t want to submit any whitespace errors. Git provides an easy way to check for this—before you
@@ -568,6 +571,243 @@ between, but conventions vary here
 
 The Git project has well-formatted commit messages—try running git log --no-merges there to see what a nicely
 formatted project-commit history looks like.
+
+#### Private Small Team
+“Private,” in this context, means closed-source—not accessible to the outside world. You and the other developers all have push access
+to the repository.
+
+Jessica thinks her topic branch is ready, but she wants to know what she has to merge into her work so that she
+can push. She runs git log to find out:
+$ git log --no-merges issue54..origin/master
+commit 738ee872852dfaa9d6634e0dea7a324040193016
+Author: John Smith <jsmith@example.com>
+Date: Fri May 29 16:01:27 2009 -0700
+removed invalid default value
+The issue54..origin/master syntax is a log filter that asks Git to only show the list of commits that are on the
+latter branch (in this case origin/master) that are not on the first branch (in this case issue54).
+
+#### Private Managed Team
+You’ll learn how to work in an
+environment where small groups collaborate on features and then those team-based contributions are integrated by
+another party.
+
+In this scenario, all work is done in team-based branches and pulled together by the integrators later
+
+`git push -u origin featureB:featureBee`
+
+This is called a refspec. Also notice the -u flag; this is short for --set-upstream, which configures the branches
+for easier pushing and pulling later.
+
+#### Public Project, Fork
+1. You clone the public project, make a feature branch, work on it.
+1. You create a fork of that project. 
+1. Make the fork your second remote
+`git remote add myfork (url)`
+
+1. Push your work to the new remote
+
+It’s easiest to push the remote branch you’re working on up to your
+repository, rather than merging into your master branch and pushing that up. The reason is that if the work isn’t
+accepted or is cherry picked, you don’t have to rewind your master branch. If the maintainers merge, rebase, or
+cherry-pick your work, you’ll eventually get it back via pulling from their repository anyhow:
+```
+$ git push -u myfork featureA
+```
+
+When your work has been pushed up to your fork, you need to notify the maintainer. This is often called a
+pull request.
+
+On a project for which you’re not the maintainer, it’s generally easier to have a branch like master always track
+origin/master and to do your work in topic branches that you can easily discard if they’re rejected. Having work
+themes isolated into topic branches also makes it easier for you to rebase your work if the tip of the main repository
+has moved in the meantime and your commits no longer apply cleanly.
+
+```
+$ git checkout -b featureB origin/master
+```
+
+```
+git push -f myfork featureA
+```
+
+specify the -f to your push command in order to be able to replace
+the featureA branch on the server with a commit that isn’t a descendant of it. An alternative would be to push this
+new work to a different branch on the server (perhaps called featureAv2).
+
+Let’s look at one more possible scenario: the maintainer has looked at work in your second branch and likes the
+concept but would like you to change an implementation detail. You’ll also take this opportunity to move the work to
+be based off the project’s current master branch. You start a new branch based off the current origin/master branch,
+squash the featureB changes there, resolve any conflicts, make the implementation change, and then push that up as
+a new branch:
+```
+$ git checkout -b featureBv2 origin/master^{}
+$ git merge --no-commit --squash featureB
+# (change implementation)
+$ git commit
+$ git push myfork featureBv2
+```
+
+The --squash option takes all the work on the merged branch and squashes it into one non-merge commit on
+top of the branch you’re on. The --no-commit option tells Git not to automatically record a commit. This allows you to
+introduce all the changes from another branch and then make more changes before recording the new commit.
+
+
+### Maintaining a Project
+
+When you’re thinking of integrating new work, it’s generally a good idea to try it out in a topic branch—a temporary
+branch specifically made to try out that new work. This way, it’s easy to tweak a patch individually and leave it if
+it’s not working until you have time to come back to it. If you create a simple branch name based on the theme of
+the work you’re going to try
+you can create the branch based off your master branch like this:
+`$ git branch sc/ruby_client master`
+
+Or, if you want to also switch to it immediately, you can use the checkout -b option:
+`$ git checkout -b sc/ruby_client master`
+
+#### Checking out remote branches
+
+you can test it by adding the remote and checking out that branch locally:
+```
+$ git remote add jessica git://github.com/jessica/myproject.git
+$ git fetch jessica
+$ git checkout -b rubyclient jessica/ruby-client
+```
+If you aren’t working with a person consistently but still want to pull from them in this way, you can provide the
+URL of the remote repository to the git pull command. This does a one-time pull and doesn’t save the URL as a
+remote reference:
+$ git pull https://github.com/onetimeguy/project
+From https://github.com/onetimeguy/project
+* branch HEAD -> FETCH_HEAD
+Merge made by recursive.
+
+It’s often helpful to get a review of all the commits that are in this branch but that aren’t in your master branch.
+You can exclude commits in the master branch by adding the --not option before the branch name. This does the
+same thing as the master..contrib format that we used earlier.
+
+```
+git log contrib --not master
+```
+
+To see what changes each commit introduces, remember that you can pass the -p option to git log and it will
+append the diff introduced to each commit.
+
+To see a full diff of what would happen if you were to merge this topic branch with another branch, you may have
+to use a weird trick to get the correct results. You may think to run this:
+`$ git diff master`
+
+This command gives you a diff, but it may be misleading. If your master branch has moved forward since you
+created the topic branch from it, then you’ll get seemingly strange results. This happens because Git directly compares
+the snapshots of the last commit of the topic branch you’re on and the snapshot of the last commit on the master
+branch. For example, if you’ve added a line in a file on the master branch, a direct comparison of the snapshots will
+look like the topic branch is going to remove that line.
+
+If master is a direct ancestor of your topic branch, this isn’t a problem; but if the two histories have diverged, the
+diff will look like you’re adding all the new stuff in your topic branch and removing everything unique to the master
+branch.
+
+What you really want to see are the changes added to the topic branch—the work you’ll introduce if you merge
+this branch with master. You do that by having Git compare the last commit on your topic branch with the first
+common ancestor it has with the master branch.
+
+Technically, you can do that by explicitly figuring out the common ancestor and then running your diff on it:
+```
+$ git merge-base contrib master
+36c7dba2c95e6bbb78dfa822519ecfec6e1ca649
+$ git diff 36c7db
+```
+However, that isn’t convenient, so Git provides another shorthand for doing the same thing: the triple-dot syntax.
+In the context of the —command, you can put three periods after another branch to do a —between the last commit
+of the branch you’re on and its common ancestor with another branch:
+```
+$ git diff master...contrib
+```
+This command shows you only the work your current topic branch has introduced since its common ancestor
+with master. That is a very useful syntax to remember.
+
+#### Integrating Contributed Work
+1. Merging Workflows
+
+One simple workflow merges your work into your master branch. In this scenario, you have a master branch
+that contains basically stable code. When you have work in a topic branch that you’ve done or that someone has
+contributed and you’ve verified, you merge it into your master branch, delete the topic branch, and then continue
+the process.
+
+That is probably the simplest workflow, but it can possibly be problematic if you’re dealing with larger or more
+stable projects where you want to be really careful about what you introduce
+
+If you have a more important project, you might want to use a two-phase merge cycle. In this scenario, you have
+two long-running branches, master and develop, in which you determine that master is updated only when a very
+stable release is cut and all new code is integrated into the develop branch. You regularly push both of these branches
+to the public repository. Each time you have a new topic branch to merge in (before a topic branch merge), you merge
+it into develop (after a topic branch merge); then, when you tag a release, you fast-forward master to wherever the
+now-stable develop branch is (after a project release).
+
+This way, when people clone your project’s repository, they can either check out master to build the latest stable
+version and keep up to date on that easily, or they can check out develop, which is the more cutting-edge stuff. You
+can also continue this concept, having an integrate branch where all the work is merged together. Then, when the
+codebase on that branch is stable and passes tests, you merge it into a develop branch; and when that has proven
+itself stable for a while, you fast-forward your master branch.
+
+1. Large-Merging Workflows
+1. Rebasing and Cherry Picking Workflows
+
+Other maintainers prefer to rebase or cherry-pick contributed work on top of their master branch, rather than
+merging it in, to keep a mostly linear history. When you have work in a topic branch and have determined that you
+want to integrate it, you move to that branch and run the rebase command to rebuild the changes on top of your
+current master (or develop, and so on) branch. If that works well, you can fast-forward your master branch, and you’ll
+end up with a linear project history.
+
+The other way to move introduced work from one branch to another is to cherry-pick it. A cherry-pick in Git
+is like a rebase for a single commit. It takes the patch that was introduced in a commit and tries to reapply it on
+the branch you’re currently on.
+
+`git cherry-pick e43a6fd3e94888d76779ad79fb568ed180e5fcdf`
+
+##### Generating a Build Number
+
+if
+you want to have a human-readable name to go with a commit, you can run git describe on that commit. Git gives you
+the name of the nearest tag with the number of commits on top of that tag and a partial SHA-1 value of the commit
+you’re describing:
+```
+$ git describe master
+v1.6.2-rc1-20-g8c5b85c
+```
+
+#### The Shortlog
+
+It summarizes all the commits in the range you give it; for example, the following gives you a
+summary of all the commits since your last release, if your last release was named v1.0.1:
+```
+$ git shortlog --no-merges master --not v1.0.1
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
