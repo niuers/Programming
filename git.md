@@ -60,6 +60,31 @@ If you want to ignore certain files for all repositories that you work with, set
 
 ..and you run git config `--global core.excludesfile ~/.gitignore_global`, Git will never again bother you about those files.
 
+## Git Aliases
+1. Examples of Git Aliases 
+```
+$ git config --global alias.co checkout
+$ git config --global alias.br branch
+$ git config --global alias.ci commit
+$ git config --global alias.st status
+$ git config --global alias.last 'log -1 HEAD'
+$ git config --global alias.unstage 'reset HEAD --'
+```
+
+This makes the following two commands equivalent:
+
+```
+$ git unstage fileA
+$ git reset HEAD fileA
+```
+
+1. However, maybe you want to run an external command, rather than a Git subcommand. In that case, you start the command with a ! character. This is useful if you write your own tools that work with a Git repository. We can demonstrate by aliasing `git visual` to run `gitk`:
+
+```
+$ git config --global alias.visual "!gitk"
+```
+
+
 ## Formatting and Whitespace
 It’s very easy for patches or other collaborated work to introduce subtle whitespace changes because editors silently introduce them, and if your files ever touch a Windows
 system, their line endings might be replaced. Git has a few configuration options to help with these issues.
@@ -155,12 +180,13 @@ Remember that the commit records the snapshot you set up in your staging area. A
 1. `git log --abbrev-commit --pretty=oneline`
 
 
-## Undoing Things
+### Undoing Things
 1. `git commit --amend`
 
 This command takes your staging area and uses it for the commit. If you’ve made no changes since your last
 commit (for instance, you run this command immediately after your previous commit), then your snapshot will look
 exactly the same, and all you’ll change is your commit message.
+
 As an example, if you commit and then realize you forgot to stage the changes in a file you wanted to add to this
 commit, you can do `git add`, then `git commit --amend`. 
 You end up with a single commit—the second commit replaces the results of the first.
@@ -169,81 +195,41 @@ Remember, anything that is committed in Git can almost always be recovered. Even
 branches that were deleted or commits that were overwritten with an --amend commit can be recovered (see the
 section on data recovery). However, anything you lose that was never committed is likely never to be seen again.
 
-## Git Remotes
+# Git Remotes
 
-1. `git remote -v`:
-1. Add remote repository
+1. `git remote -v`: list remote repositories
+1. Add a remote repository 
 `git remote add pb https://github.com/paulboone/ticgit`
+
 1. `git fetch [remote-name]`: 
-The command goes out to that remote project and pulls down all the data from that remote project that you don’t
-have yet. After you do this, you should have references to all the branches from that remote, which you can merge in
-or inspect at any time.
+  * The command goes out to that remote project and pulls down all the data from that remote project that you don’t have yet. After you do this, you should have references to all the branches from that remote, which you can merge in or inspect at any time.
+  * It’s important to note that the `git fetch` command pulls the data to your local repository—it doesn’t automatically merge it with any of your work or modify what you’re currently working on. You have to merge it manually into your work when you’re ready.
 
-It’s important to note that the git fetch command pulls the data to your local repository—it doesn’t automatically
-merge it with any of your work or modify what you’re currently working on. You have to merge it manually into your
-work when you’re ready.
+1. If you have a branch set up to track a remote branch , you can use the `git pull` command to automatically fetch and then merge a remote branch into your current branch.
+Running `git pull` generally fetches data from the server you originally cloned from and automatically tries to merge it into the code you’re currently working on.
 
-1. If you have a branch set up to track a remote branch (see the next section and Chapter 3 for more information),
-you can use the git pull command to automatically fetch and then merge a remote branch into your current branch.
-
-Running git pull generally fetches data from the server you originally cloned from and
-automatically tries to merge it into the code you’re currently working on.
-
-#### Pushing to Your Remotes
+## Pushing to Your Remotes
 1. `git push [remote-name] [branch-name]`
-
 1. `git remote show origin`: inspect a remote
 
-#### Tagging
-1. Search for tags with a particular pattern
-`git tag -l 'v1.8.5*'`
+# Git Tag
 
-#### Create Tags
+1. Search for tags with a particular pattern: `git tag -l 'v1.8.5*'`
+1. Tag a commit: `git tag -a v1.2 9fceb02`
+1. Sharing Tags: By default, the git push command doesn’t transfer tags to remote servers. You need push them explicitly to remote servers.
+  * `git push origin [tagname]`
+  * `git push origin --tags`
+
+### Create Tags
 1. Annotated Tags
-  * Annotated tags, however, are stored as full objects in the Git database. They’re checksummed; contain the tagger
-name, e-mail, and date; have a tagging message; and can be signed and verified with GNU Privacy Guard (GPG).
-It’s generally recommended that you create annotated tags so you can have all this information; but if you want a
-temporary tag or for some reason don’t want to keep the other information, lightweight tags are available too.
+  * Annotated tags, are stored as full objects in the Git database. They’re checksummed; contain the tagger name, e-mail, and date; have a tagging message; and can be signed and verified with GNU Privacy Guard (GPG). It’s generally recommended that you create annotated tags so you can have all this information; but if you want a temporary tag or for some reason don’t want to keep the other information, lightweight tags are available too. `-a` is for annoted.
 
 `git tag -a v1.4 -m 'my version 1.4'`
 
-Tag commit
-`git tag -a v1.2 9fceb02`
-
-
-1. Lightweight Tag:  lightweight tag is very much like a branch that doesn’t change—it’s just a pointer to a specific commit
-`git tag v1.4-lw`
-
-This is basically the commit checksum stored in a file—no other
+1. Lightweight Tag:  It is very much like a branch that doesn’t change—it’s just a pointer to a specific commit. This is basically the commit checksum stored in a file—no other
 information is kept.
 
-Sharing Tags: By default, the git push command doesn’t transfer tags to remote servers.
-1. `git push origin [tagname]`
-1. `git push origin --tags`
-
-### Git Aliases
-1. 
-```
-$ git config --global alias.co checkout
-$ git config --global alias.br branch
-$ git config --global alias.ci commit
-$ git config --global alias.st status
-$ git config --global alias.last 'log -1 HEAD'
-$ git config --global alias.unstage 'reset HEAD --'
-```
-
-This makes the following two commands equivalent:
-```
-$ git unstage fileA
-$ git reset HEAD fileA
-```
-
-However, maybe you want to run
-an external command, rather than a Git subcommand. In that case, you start the command with a ! character. This is
-useful if you write your own tools that work with a Git repository. We can demonstrate by aliasing `git visual` to run `gitk`:
-```
-$ git config --global alias.visual "!gitk"
-```
+`git tag v1.4-lw`
 
 
 
