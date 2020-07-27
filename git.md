@@ -1,7 +1,8 @@
-### Table of Contents
+## Table of Contents
 **[Git Overview](#git-overview)**<br>
-**[Git Basics](#git-basics)**<br>
-- [Git configs](#git0configs)<br>
+**[Git Configs](#git-configs)**<br>
+**[Git Process](#git-process)**<br>
+**[Git Log](#git-log)**<br>
 - [Undoing Things](#undoing-things)<br>
 - [Git Remote](#git-remote)<br>
 
@@ -123,27 +124,25 @@ project, tell Git how to diff non-text files, or have Git filter content before 
 
 
 
-## Getting a Git Repository
+# Git Process
+### Initializing a Repository
 1. 'git init'
 1. 'git clone'
 
+### Traced and Untracked Files
 1. Tracked files: Files that were in the last snapshot.
 1. Untracked files: Everything else. Any files in your working directory that were not in your last snapshot and are not in your staging area.
 
-`git add` is a multipurpose command—you use it to begin tracking new files, to stage files, and
+1. `git add` is a multipurpose command—you use it to begin tracking new files, to stage files, and
 to do other things like marking merge-conflicted files as resolved. It may be helpful to think of it more as “add this
 content to the next commit” rather than “add this file to the project”
 
-A file can be in both staged and 'not staged but modified' status
-It turns out that
-Git stages a file exactly as it is when you run the git add command. If you commit now, the version of benchmarks.rb
-as it was when you last ran the git add command is how it will go into the commit, not the version of the file as it
-looks in your working directory when you run git commit. If you modify a file after you run git add, you have to
-run git add again to stage the latest version of the file
+1. A file can be in both staged and 'not staged but modified' status
+It turns out that Git stages a file exactly as it is when you run the `git add` command, not the version of the file as it
+looks in your working directory when you run `git commit`. If you modify a file after you run `git add`, you have to run `git add` again to stage the latest version of the file
+Remember that the commit records the snapshot you set up in your staging area. Anything you didn’t stage is still sitting there modified; you can do another commit to add it to your history. Every time you perform a commit, you’re recording a snapshot of your project that you can revert to or compare to later.
 
-Remember that the commit records the snapshot you set up in your staging area. Anything you didn’t stage is still
-sitting there modified; you can do another commit to add it to your history. Every time you perform a commit, you’re
-recording a snapshot of your project that you can revert to or compare to later.
+# Git Log
 
 1. `git log -p -2`
 1. `git log --stat`
