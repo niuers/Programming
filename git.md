@@ -1,4 +1,5 @@
 ## Table of Contents
+**[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Overview](#git-overview)**<br>
 **[Git Configs](#git-configs)**<br>
 **[Git Process](#git-process)**<br>
@@ -17,9 +18,10 @@
 **[Advanced Merging](#advanced-merging)**<br>
 **[Debugging with Git](#debugging-with-git)**<br>
 **[Git GUI](#git-gui)**<br>
-**[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
 **[References](#references)**<br>
+
+## Git Usage Examples
 
 
 # Git Overview
@@ -1320,27 +1322,6 @@ Doing so automatically runs test-error.sh on each checked-out commit until Git f
 You can also run something such as make or make tests or whatever you have that runs automated tests for you.
 
 
-#### Submodules
-It often happens that while working on one project, you need to use another project from within it. Perhaps it’s a
-library that a third party developed or that you’re developing separately and using in multiple parent projects. A
-common issue arises in these scenarios: you want to be able to treat the two projects as separate yet still be able to use
-one from within the other.
-
-
-The issue with including
-the library is that it’s difficult to customize the library in any way and often more difficult to deploy it, because you
-need to make sure every client has that library available. The issue with vendoring the code into your own project is
-that any custom changes you make are difficult to merge when upstream changes become available.
-Git addresses this issue using submodules. Submodules allow you to keep a Git repository as a subdirectory of
-another Git repository. This lets you clone another repository into your project and keep your commits separate.
-
-
-
-
-
-
-
-
 # Git GUI
 ### gitk
 1. A powerful GUI shell over `git log` and `git grep`. This is the tool to use when you’re trying to find something that happened in the past, or visualize your project’s history.
@@ -1426,9 +1407,7 @@ because you’re most likely to need faster access to the most recent version of
 
 
 
-## Git Usage Examples
 
-  
 
 
 
