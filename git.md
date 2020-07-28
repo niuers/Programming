@@ -14,6 +14,8 @@
 **[Searching](#searching)**<br>
 **[Rewriting History](#rewriting-history)**<br>
 **[Reset Demystified](#reset-demystified)**<br>
+**[Advanced Merging](#advanced-merging)**<br>
+**[Debugging with Git](#debugging-with-git)**<br>
 **[Git GUI](#git-gui)**<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
@@ -1148,7 +1150,7 @@ checkout (commit)
 NO YES YES NO
 
 
-#### Advanced Merging
+# Advanced Merging
 
 Git’s philosophy is to be smart about determining when a merge
 resolution is unambiguous, but if there is a conflict, it does not try to be clever about automatically resolving it.
@@ -1322,7 +1324,7 @@ If Git sees this, it will not add conflict markers. Any differences that are mer
 that conflict, it will simply choose the side you specify in whole, including binary files
 
 
-#### Debugging with Git
+# Debugging with Git
 1. File Annotation
 
 If you track down a bug in your code and want to know when it was introduced and why, file annotation is often your
@@ -1409,32 +1411,34 @@ another Git repository. This lets you clone another repository into your project
 
 # Git GUI
 ### gitk
-A powerful GUI shell over `git log` and `git grep`. This is the tool
-to use when you’re trying to find something that happened in the past, or visualize your project’s history.
-
-Probably one of the most useful is the --all flag, which tells gitk to show commits reachable from any ref, not just
-HEAD.
+1. A powerful GUI shell over `git log` and `git grep`. This is the tool to use when you’re trying to find something that happened in the past, or visualize your project’s history.
+1. Probably one of the most useful is the `gitk --all`, which tells gitk to show commits reachable from any ref, not just HEAD.
 
 ### git-gui
 `git gui`: is primarily a tool for crafting commits
 
-
-## Git in Bash
-If you’re a Bash user, you can tap into some of your shell’s features to make your experience with Git a lot friendlier.
-Git actually ships with plugins for several shells, but it’s not turned on by default.
-First, you need to get a copy of the contrib/completion/git-completion.bash file out of the Git source code.
-Copy it somewhere handy, like your home directory, and add this to your .bashrc:
-. ~/git-completion.bash
-Once that’s done, change your directory to a git repository, and type:
-$ git chec<tab>
+### Git in Bash
+1. If you’re a Bash user, you can tap into some of your shell’s features to make your experience with Git a lot friendlier.
+1. Git actually ships with plugins for several shells, but it’s not turned on by default.
+  * First, you need to get a copy of the `contrib/completion/git-completion.bash` file out of the Git source code.
+  * Copy it somewhere handy, like your home directory, and add this to your `.bashrc`:
+  ```
+  . ~/git-completion.bash
+  ```
+  * Once that’s done, change your directory to a git repository, and type:
+  ```
+  $ git chec<tab>
+  ```
+  
 …and Bash will auto-complete to git checkout. This works with all of Git’s subcommands, command-line
 parameters, and remotes and ref names where appropriate.
   
-It’s also useful to customize your prompt to show information about the current directory’s Git repository.
-This can be as simple or complex as you want, but there are generally a few key pieces of information that most
-people want, like the current branch and the status of the working directory. To add these to your prompt, just copy
-the contrib/completion/git-prompt.sh file from Git’s source repository to your home directory, add something like
-this to your .bashrc:
+1. It’s also useful to customize your prompt to show information about the current directory’s Git repository.
+  * This can be as simple or complex as you want, but there are generally a few key pieces of information that most
+people want, like the current branch and the status of the working directory.
+  * To add these to your prompt, just copy the `contrib/completion/git-prompt.sh` file from Git’s source repository to your home directory, add something like
+this to your `.bashrc`:
+
 ```
 . ~/git-prompt.sh
 export GIT_PS1_SHOWDIRTYSTATE=1
@@ -1445,14 +1449,6 @@ The `\w` means print the current working directory, the `\$` prints the `$` part
 calls the function provided by `git-prompt.sh` with a formatting argument. Now your bash prompt will look like this
 when you’re anywhere inside a Git-controlled project
 
-  
-  
-
-
-
-
-
-
 # Git Internals
 
 ### Git is a Content-Addressable Filesystem
@@ -1460,41 +1456,35 @@ when you’re anywhere inside a Git-controlled project
 
 1. Git thinks about its data more like a **"stream of snapshots"**. Other VCS (Subversion etc.) think of the information as a set of files and the changes (deltas) made to each file over time.
 
-1. All the content is stored as tree and blob objects, with trees corresponding to UNIX directory entries and blobs corresponding more
-or less to inodes or file contents. A single tree object contains one or more tree entries, each of which contains
-a SHA-1 pointer to a blob or subtree with its associated mode, type, and filename.
+1. All the content is stored as tree and blob objects, with trees corresponding to UNIX directory entries and blobs corresponding more or less to inodes or file contents. A single tree object contains one or more tree entries, each of which contains a SHA-1 pointer to a blob or subtree with its associated mode, type, and filename.
 
 ### Git Objects
 #### Blob Objects
 1. `objects`: stores all the content for your database
-1. `git hash-object`
-1. `git cat-file`
+1. `git hash-object`: create hash key
+1. `git cat-file`: show the contents 
 
 #### Tree Objects
 1. `git cat-file -p master^{tree}`
 
-#### Commit Object
+#### Commit Objects
 
-#### Tags
-1. The tag object is very much like a
-commit object – it contains a tagger, a date, a message, and a pointer. The main difference is that a tag object generally
-points to a commit rather than a tree. It’s like a branch reference, but it never moves—it always points to the same
-commit but gives it a friendlier name.
+#### Tag Objects
+1. The tag object is very much like a commit object – it contains a tagger, a date, a message, and a pointer. The main difference is that a tag object generally
+points to a commit rather than a tree. It’s like a branch reference, but it never moves—it always points to the same commit but gives it a friendlier name.
 1. Also notice that it doesn’t need to point to a commit; you can tag any Git object.
-##### Annotated 
-##### Lightweight
 
 #### Pack Files
 1. The initial format in which Git saves objects on disk is called a “loose” object format.
-However, occasionally Git packs up several of these objects into a single binary file called a “packfile” in order to save
-space and be more efficient. Git does this if you have too many loose objects around, if you run the git gc command
-manually, or if you push to a remote server. To see what happens, you can manually ask Git to pack up the objects by
-calling the git gc command
-1. The packfile is a single file containing the contents of
-all the objects that were removed from your filesystem. The index is a file that contains offsets into that packfile
-so you can quickly seek to a specific object.
-1. What is also interesting is that
-the second version of the file is the one that is stored intact, whereas the original version is stored as a delta—this is
+1. However, occasionally Git packs up several of these objects into a single binary file called a “packfile” in order to save space and be more efficient. 
+  * Git does this if you have too many loose objects around, 
+  * If you run the `git gc` command manually, 
+  * If you push to a remote server. 
+  
+1. To see what happens, you can manually ask Git to pack up the objects by calling the `git gc` command
+1. The packfile is a single file containing the contents of all the objects that were removed from your filesystem. 
+* The index is a file that contains offsets into that packfile so you can quickly seek to a specific object.
+1. What is also interesting is that the second version of the file is the one that is stored intact, whereas the original version is stored as a delta—this is
 because you’re most likely to need faster access to the most recent version of the file.
 
 ####
