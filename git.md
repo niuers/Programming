@@ -1070,14 +1070,16 @@ Like reset, `checkout` manipulates the three trees, and it is a bit different de
   * The “HEAD” column reads “REF” if that command moves the reference (branch) that HEAD points to, and “HEAD” if it moves HEAD itself. 
   * Pay especial attention to the WD Safe? column—if it says NO, take a second to think before running that command.
 
-|HEAD |Index |Workdir WD Safe?|Commit| Level|
+||HEAD |Index |Workdir| WD Safe?|
 |---|---|---|---|---|
+|Commit Level|
 |reset --soft [commit]| REF| NO |NO |YES|
 |reset [commit]| REF |YES |NO |YES|
-|reset --hard [commit] |REF |YES| YES| NO|
+|reset --hard [commit] |REF |YES| YES| **NO**|
 |checkout [commit] |HEAD| YES| YES |YES|
-|File Level reset (commit) [file] |NO| YES| NO| YES|
-|checkout (commit) [file] |NO| YES| YES| NO|
+|File Level| 
+|reset (commit) [file] |NO| YES| NO| YES|
+|checkout (commit) [file] |NO| YES| YES| **NO**|
 
 
 # Advanced Merging
