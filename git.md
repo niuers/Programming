@@ -861,37 +861,27 @@ If you need to be more specific, you can provide a regular expression to search 
 
 # Rewriting History
 
-### Changing the Last Commit
-1. Change commit message
-`git commit --amend`: change your last commit
+### Change the Last Commit
 
-1. Change the snapshot you just recorded: adding, changing, removing files
-  * Stage the  changes you want by editing a file and running `git add` on it or `git rm` to a tracked file
+##### `git commit --amend`
+1. You can change the message of your last commit
+1. You Change the snapshot you just recorded: adding, changing, removing files
+  * Stage the changes you want by editing a file and running `git add` on it or `git rm` to a tracked file
   * Then run `git commit --amend`, which takes your current staging area and makes it the snapshot for the new commit.
   
-You need to be careful with this technique because amending changes the SHA-1 of the commit. It’s like a very
-small rebase—don’t amend your last commit if you’ve already pushed it.  
+1. You need to be careful with this technique because amending changes the SHA-1 of the commit. 
+  * It’s like a very small rebase
+  * **Don’t amend your last commit if you’ve already pushed it. **
 
-### Changing Multiple Commit Messages
+### Change Multiple Commit Messages
 
-To modify a commit that is farther back in your history, you must move to more complex tools. 
-You can use the rebase tool to rebase a series of commits onto the HEAD they were
-originally based on instead of moving them to another one. With the interactive rebase tool, you can then stop after
-each commit you want to modify and change the message, add files, or do whatever you wish. You can run rebase
-interactively by adding the `-i` option to `git rebase`. You must indicate how far back you want to rewrite commits by
-telling the command which commit to rebase onto.
+1. To modify a commit that is farther back in your history, you must move to more complex tools. 
+  * You can use the rebase tool to rebase a series of commits onto the HEAD they were originally based on instead of moving them to another one. With the interactive rebase tool, you can then stop after each commit you want to modify and change the message, add files, or do whatever you wish. You can run rebase interactively by adding the `-i` option to `git rebase`. You must indicate how far back you want to rewrite commits by telling the command which commit to rebase onto.
+  * For example, if you want to change the last three commit messages, or any of the commit messages in that group, you supply as an argument to `git rebase -i` the parent of the last commit you want to edit, which is `HEAD~2^` or `HEAD~3`: `$ git rebase -i HEAD~3`
+  * Remember again that this is a rebasing command—every commit included in the range `HEAD~3..HEAD` will be rewritten, whether or not you change the message. 
+  * **Don’t include any commit you’ve already pushed to a central server**: doing so will confuse other developers by providing an alternate version of the same change.
+  * Running this command gives you a list of commits in your text editor that looks something like this:
 
-For example, if you want to change the last three commit messages, or any of the commit messages in that group,
-you supply as an argument to git rebase -i the parent of the last commit you want to edit, which is HEAD~2^ or
-HEAD~3. It may be easier to remember the ~3 because you’re trying to edit the last three commits; but keep in mind
-that you’re actually designating four commits ago, the parent of the last commit you want to edit:
-`$ git rebase -i HEAD~3`
-
-Remember again that this is a rebasing command—every commit included in the range HEAD~3..HEAD will be
-rewritten, whether or not you change the message. Don’t include any commit you’ve already pushed to a central
-server—doing so will confuse other developers by providing an alternate version of the same change.
-
-Running this command gives you a list of commits in your text editor that looks something like this:
 ```
 pick f7f3f6d changed my name a bit
 pick 310154e updated README formatting and added blame
@@ -915,55 +905,37 @@ pick a5f4a0d added cat-file
 # Note that empty commits are commented out
 ```
 
-It’s important to note that these commits are listed in the opposite order than you normally see them using the
-log command.
+  * Notice the reverse order. It’s important to note that these commits are listed in the opposite order than you normally see them using the log command.
+  * The interactive rebase gives you a script that it’s going to run. It will start at the commit you specify on the command line (`HEAD~3`) and replay the changes introduced in each of these commits from top to bottom. It lists the oldest at the top, rather than the newest, because that’s the first one it will replay. You need to edit the script so that it stops at the commit you want to edit. To do so, change the word pick to the word "edit" for each of the commits you want the script to stop after.
 
-Notice the reverse order. The interactive rebase gives you a script that it’s going to run. It will start at the commit
-you specify on the command line (HEAD~3) and replay the changes introduced in each of these commits from top to
-bottom. It lists the oldest at the top, rather than the newest, because that’s the first one it will replay.
-You need to edit the script so that it stops at the commit you want to edit. To do so, change the word pick to the
-word edit for each of the commits you want the script to stop after.
-
-### Reordering Commits
-You can also use interactive rebases to reorder or remove commits entirely
-
-### Squashing a Commit
-It’s also possible to take a series of commits and squash them down into a single commit with the interactive rebasing
+1. You can also use interactive rebases to reorder or remove commits entirely
+1. It’s also possible to take a series of commits and squash them down into a single commit with the interactive rebasing
 tool.
-
-If, instead of “pick” or “edit,” you specify “squash,” Git applies both that change and the change directly before it
+  * If, instead of “pick” or “edit,” you specify “squash,” Git applies both that change and the change directly before it
 and makes you merge the commit messages.
 
-### Splitting a Commit
-Splitting a commit undoes a commit and then partially stages and commits as many times as commits you want to
-end up with.
+##### Splitting a Commit
+1. Splitting a commit undoes a commit and then partially stages and commits as many times as commits you want to end up with. Then, when the script drops you to the command line, you reset that commit, take the changes that have been reset, and create multiple commits out of them.
 
-Then, when the script drops you to the command line, you reset that commit, take the changes that have been
-reset, and create multiple commits out of them.
-
-`git reset HEAD^` effectively undoes that commit and leave the modified files unstages.
-
-Once again, this changes the SHAs of all the commits in your list, so make sure no commit shows up in that list
+1. `git reset HEAD^` effectively undoes that commit and leave the modified files unstages.
+  * Once again, this changes the SHAs of all the commits in your list, so make sure no commit shows up in that list
 that you’ve already pushed to a shared repository.
 
-### The Nuclear Option: filter-branch
-There is another history-rewriting option that you can use if you need to rewrite a larger number of commits in
-some scriptable way—for instance, changing your e-mail address globally or removing a file from every commit. The
-command is filter-branch, and it can rewrite huge swaths of your history, so you probably shouldn’t use it unless
+##### The Nuclear Option: filter-branch
+There is another history-rewriting option that you can use if you need to rewrite a larger number of commits in some scriptable way—for instance, changing your e-mail address globally or removing a file from every commit. The command is `filter-branch`, and it can rewrite huge swaths of your history, so you probably shouldn’t use it unless
 your project isn’t yet public and other people haven’t based work off the commits you’re about to rewrite.
 
 # Reset Demystified
-
-An easier way to think about reset and checkout is through the mental frame of Git being a content manager of three
+1. An easier way to think about reset and checkout is through the mental frame of Git being a content manager of three
 different trees. By “tree” here we really mean “collection of files,” not specifically the data structure. (There are a few
 cases where the index doesn’t exactly act like a tree, but for our purposes it is easier to think about it this way for now.)
-Git as a system manages and manipulates three trees in its normal operation:
-```
-Tree Role
-HEAD Last commit snapshot, next parent
-Index Proposed next commit snapshot
-Working Directory Sandbox
-```
+
+1. Git as a system manages and manipulates three trees in its normal operation:
+|Tree|Role|
+|---|---|
+|HEAD|Last commit snapshot, next parent
+|Index| Proposed next commit snapshot
+|Working Directory| Sandbox
 
 #### The HEAD
 HEAD is the pointer to the current branch reference, which is in turn a pointer to the last commit made on that
