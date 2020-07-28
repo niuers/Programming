@@ -8,7 +8,12 @@
 **[Git Branching](#git-branching)**<br>
 **[Git Rebase](#git-rebase)**<br>
 **[Distributed Git](#distributed-git)**<br>
-**[Tricks](#tricks)**<br>
+**[Git Tricks](#git-tricks)**<br>
+**[Interactive Staging](#interactive-staging)**<br>
+**[Stashing and Cleaning](#stashing-and-cleaning)**<br>
+**[Searching](#searching)**<br>
+**[Rewriting History](#rewriting-history)**<br>
+**[Reset Demystified](#reset-demystified)**<br>
 **[Git GUI](#git-gui)**<br>
 **[Git Usage Examples](#git-usage-examples)**<br>
 **[Git Internals](#git-internals)**<br>
@@ -679,85 +684,60 @@ $ git shortlog --no-merges master --not v1.0.1
 
 
 
-# Tricks
+# Git Tricks
 ### Branch References
-The most straightforward way to specify a commit requires that it have a branch reference pointed at it.
-If you want to see which specific SHA a branch points to, or if you want to see what any of these examples
-boils down to in terms of SHAs, you can use a Git plumbing tool called rev-parse
+The most straightforward way to specify a commit requires that it have a branch reference pointed at it. If you want to see which specific SHA a branch points to, you can use a Git plumbing tool called `rev-parse`
+
 `git rev-parse topic1`
 
 
 ### RefLog Shortnames
-1. One of the things Git does in the background while you’re working away is keep a “reflog”—a log of where your HEAD
-and branch references have been for the last few months.
+1. `git reflog`
+  * One of the things Git does in the background while you’re working away is keep a “reflog”—a log of where your *HEAD* and branch references have been for the last few months.
+  * Every time your branch tip is updated for any reason, Git stores that information for you in this temporary history. (`.git/logs/refs`)
+  * And you can specify older commits with this data, as well. If you want to see the fifth prior value of the HEAD of your repository, you can use the `@{n}` reference that you see in the reflog output:
+  ```
+  $ git show HEAD@{5}
+  ```
+For instance, to see where your master branch was yesterday, you can type
+`$ git show master@{yesterday}`
 
-`git reflog`
+  * This technique only works for data that’s still in your reflog, so you can’t use it to look for commits older than a few months
+  * To see reflog information formatted like the `git log` output, you can run `git log -g`: `git log -g master`
 
-Every time your branch tip is updated for any reason, Git stores that information for you in this temporary
-history. And you can specify older commits with this data, as well. If you want to see the fifth prior value of the HEAD
-of your repository, you can use the @{n} reference that you see in the reflog output:
-$ git show HEAD@{5}
-
-For instance, to see
-where your master branch was yesterday, you can type
-$ git show master@{yesterday}
-
-This technique only works for data that’s still in your reflog,
-so you can’t use it to look for commits older than a few months
-
-To see reflog information formatted like the git log output, you can run git log -g:
-`got log -g master`
-
-It’s important to note that the ref log information is strictly local—it’s a log of what you’ve done in your repository.
-The references won’t be the same on someone else’s copy of the repository; and right after you initially clone a
-repository, you’ll have an empty reflog, as no activity has occurred yet in your repository.
+1. It’s important to note that the ref log information is strictly local—it’s a log of what you’ve done in your repository.
+  * The references won’t be the same on someone else’s copy of the repository; and right after you initially clone a repository, you’ll have an empty reflog, as no activity has occurred yet in your repository.
 
 ### Ancestry References
-The other main way to specify a commit is via its ancestry. If you place a ^ at the end of a reference, Git resolves it to
-mean the parent of that commit.
-
-you can see the previous commit by specifying HEAD^, which means “the parent of HEAD.”
-`git show HEAD^`
-
-You can also specify a number after the ^—for example, d921970^2 means “the second parent of d921970.” This
-syntax is only useful for merge commits, which have more than one parent. The first parent is the branch you were on
-when you merged, and the second is the commit on the branch that you merged in
-
-The other main ancestry specification is the ~. This also refers to the first parent, so HEAD~ and HEAD^ are
-equivalent. The difference becomes apparent when you specify a number. HEAD~2 means “the first parent of the first
-parent,” or “the grandparent”—it traverses the first parents the number of times you specify.
+1. The other main way to specify a commit is via its ancestry. If you place a `^` at the end of a reference, Git resolves it to mean the parent of that commit.
+1. `git show HEAD^`: You can see the previous commit by specifying `HEAD^`, which means “the parent of HEAD.”
+1. You can also specify a number after the `^`—for example, `d921970^2` means “the second parent of d921970.” This syntax is only useful for merge commits, which have more than one parent. The first parent is the branch you were on when you merged, and the second is the commit on the branch that you merged in
+1. The other main ancestry specification is the `~`. This also refers to the first parent, so `HEAD~` and `HEAD^` are equivalent. The difference becomes apparent when you specify a number. `HEAD~2` means “the first parent of the first parent,” or “the grandparent”—it traverses the first parents the number of times you specify.
 
 ### Commit Ranges
-#### Double Dot
-This basically asks Git to resolve a range of commits
-that are reachable from one commit but aren’t reachable from another.
-
-You want to see what is in your experiment branch that hasn’t yet been merged into your master branch. You
-can ask Git to show you a log of just those commits with master..experiment—that means “all commits reachable by
-experiment that aren’t reachable by master.”
+##### Double Dot
+1. This basically asks Git to resolve a range of commits that are reachable from one commit but aren’t reachable from another.
+1. You want to see what is in your "experiment" branch that hasn’t yet been merged into your "master" branch. You can ask Git to show you a log of just those commits with `master..experiment`—that means “all commits reachable by experiment that aren’t reachable by master.”
 
 `git log master..experiment`
 
-If, on the other hand, you want to see the opposite—all commits in master that aren’t in experiment—you can
-reverse the branch names. experiment..master shows you everything in master not reachable from experiment
+1. If you want to see the opposite—all commits in master that aren’t in "experiment"—you can reverse the branch names. `experiment..master` shows you everything in master not reachable from experiment
 
-Another very frequent use of this syntax is to see what you’re about to push to a remote
-`git log origin/master..HEAD`
+1. Another very frequent use of this syntax is to see what you’re about to push to a remote
 
-This command shows you any commits in your current branch that aren’t in the master branch on your origin
-remote.
+```
+git log origin/master..HEAD
+```
 
-You can also leave off one side of the
-syntax to have Git assume HEAD. For example, you can get the same results as in the previous example by typing
-git log origin/master.. – Git substitutes HEAD if one side is missing.
+This command shows you any commits in your current branch that aren’t in the master branch on your origin remote.
+
+1. You can also leave off one side of the syntax to have Git assume HEAD. For example, you can get the same results as in the previous example by typing
+`git log origin/master..` – Git substitutes HEAD if one side is missing.
 
 
-### Multiple Points
+##### Multiple Points
 
-perhaps you want to specify more than two branches to indicate
-your revision, such as seeing what commits are in any of several branches that aren’t in the branch you’re currently
-on. Git allows you to do this by using either the ^ character or --not before any reference from which you don’t want
-to see reachable commits. Thus these three commands are equivalent
+1. perhaps you want to specify more than two branches to indicate your revision, such as seeing what commits are in any of several branches that aren’t in the branch you’re currently on. Git allows you to do this by using either the `^` character or `--not` before any reference from which you don’t want to see reachable commits. Thus these three commands are equivalent
 
 ```
 $ git log refA..refB
@@ -765,170 +745,121 @@ $ git log ^refA refB
 $ git log refB --not refA
 ```
 
-For instance, if you want to see all commits that are reachable from refA or refB but
-not from refC, you can type one of these:
+For instance, if you want to see all commits that are reachable from refA or refB but not from refC, you can type one of these:
 ```
 $ git log refA refB ^refC
 $ git log refA refB --not refC
 ```
 
-### Triple Dots
-specifies all the commits that are reachable by either of two references but not by both of them.
-
-If you want to see what is in master or experiment but not any common references, you can run
+##### Triple Dots
+1. It specifies all the commits that are reachable by either of two references but not by both of them. If you want to see what is in "master" or "experiment" but not any common references, you can run
+```
 $ git log master...experiment
+```
 
-#### Interactive Staging
-1. a few interactive
-commands that can help you easily craft your commits to include only certain combinations and parts of files.
+# Interactive Staging
+1. `git add -i`: A few interactive commands that can help you easily craft your commits to include only certain combinations and parts of files.
+1. These tools are very helpful if you modify a bunch of files and then decide that you want those changes to be in several focused commits rather than one big messy commit. 
+1. If you run git add with the `-i` or `--interactive` option, Git goes into an interactive shell mode.
 
-These tools are very helpful if you modify a bunch of files and then decide that you want those changes to be in
-several focused commits rather than one big messy commit. This way, you can make sure your commits are logically
-separate changesets and can be easily reviewed by the developers working with you. If you run git add with the -i or
---interactive option, Git goes into an interactive shell mode, displaying something like this:
-
-`git add -i`
-
-1. Staging and Unstaging Files
-Select '2' or 'u' (update): 
-
+1. Staging and Unstaging Files: Select '2' or 'u' (update): 
 1. Staging Patches
-
-It’s also possible for Git to stage certain parts of files and not the rest. For example, if you make two changes to your
-simplegit.rb file and want to stage one of them and not the other, doing so is very easy in Git. From the interactive
-prompt, type 5 or p (for patch). Git will ask you which files you would like to partially stage; then, for each section of
+  * It’s also possible for Git to stage certain parts of files and not the rest. 
+  * For example, if you make two changes to your `simplegit.rb` file and want to stage one of them and not the other. From the interactive
+prompt, type `5` or `p` (for `patch`). Git will ask you which files you would like to partially stage; then, for each section of
 the selected files, it will display hunks of the file diff and ask if you would like to stage them, one by one
+  * You also don’t need to be in interactive add mode to do the partial-file staging—you can start the same script by using `git add -p` or `git add --patch` on the command line.
+  * Furthermore, you can use patch mode for partially resetting files with the `reset --patch` command, for checking out parts of files with the `checkout --patch` command and for stashing parts of files with the `stash save --patch` command. 
 
-You also don’t need to be in interactive add mode to do the partial-file staging—you can start the same script by
-using git add -p or git add --patch on the command line.
+# Stashing and Cleaning
+1. `git stash apply stash@{1}`: You can see that Git remodifies the files you reverted when you saved the stash.
+1. The changes to your files were reapplied, but the file you staged before wasn’t restaged. 
+  * To do that, you must run the `git stash apply` command with a `--index` option to tell the command to try to reapply the staged changes. If you
+had run that instead, you’d have gotten back to your original position.
 
-Furthermore, you can use patch mode for partially resetting files with the reset --patch command, for checking
-out parts of files with the checkout --patch command and for stashing parts of files with the stash save --patch
-command. 
+### Creative Stashing
+1. The first option that is quite popular is the `--keep-index` option to the stash save command. This tells Git to not stash anything that you’ve already staged with the `git add` command.
+  * This can be really helpful if you’ve made a number of changes but want to only commit some of them and then come back to the rest of the changes at a later time.
 
-#### Stashing and Cleaning
-1. Often, when you’ve been working on part of your project, things are in a messy state and you want to switch branches
-for a bit to work on something else. The problem is, you don’t want to do a commit of half-done work just so you can
-get back to this point later. The answer to this issue is the git stash command.
-
-`git stash apply stash@{1}`
-You can see that Git remodifies the files you reverted when you saved the stash.
-
-The changes to your files were reapplied, but the file you staged before wasn’t restaged. To do that, you must run
-the git stash apply command with a --index option to tell the command to try to reapply the staged changes. If you
-had run that instead, you’d have gotten back to your original position
-
-#### Creative Stashing
-1. 
-The first option that is quite popular is the --keep-index
-option to the stash save command. This tells Git to not stash anything that you’ve already staged with the git add
-command.
-This can be really helpful if you’ve made a number of changes but want to only commit some of them and then
-come back to the rest of the changes at a later time.
-
-1. 
-Another common thing you may want to do with stash is to stash the untracked files as well as the tracked ones.
-By default, git stash will only store files that are already in the index. If you specify --include-untracked or -u, Git
-will also stash any untracked files you have created.
-
-1. Finally, if you specify the --patch flag, Git will not stash everything that is modified but will instead prompt you
-interactively which of the changes you would like to stash and which you would like to keep in your working directory.
+1. Another common thing you may want to do with stash is to stash the untracked files as well as the tracked ones. By default, `git stash` will only store files that are already in the index. If you specify `--include-untracked` or `-u`, Git will also stash any untracked files you have created.
+1. Finally, if you specify the `--patch` flag, Git will not stash everything that is modified but will instead prompt you interactively which of the changes you would like to stash and which you would like to keep in your working directory.
+```
 $ git stash --patch
+```
 
-#### Unapplying a Stash
-
-In some use case scenarios you might want to apply stashed changes, do some work, but then unapply those changes
-that originally came from the stash. Git does not provide such a stash unapply command, but it is possible to achieve
-the effect by simply retrieving the patch associated with a stash and applying it in reverse:
+### Unapplying a Stash
+1. In some use case scenarios you might want to apply stashed changes, do some work, but then unapply those changes that originally came from the stash. Git does not provide such a stash unapply command, but it is possible to achieve the effect by simply retrieving the patch associated with a stash and applying it in reverse:
+```
 $ git stash show -p stash@{0} | git apply -R
+```
+
 Again, if you don’t specify a stash, Git assumes the most recent stash:
-$ git stash show -p | git apply -R
+`$ git stash show -p | git apply -R`
+
 You may want to create an alias and effectively add a stash-unapply command to your git. For example:
+
+```
 $ git config --global alias.stash-unapply '!git stash show -p | git apply -R'
 $ git stash
 $ #... work work work
 $ git stash-unapply
+```
 
+### Creating a Branch from a Stash
 
-#### Creating a Branch from a Stash
+`git stash branch testchanges`: which creates a new branch for you, checks out the commit you were on when you stashed your work, reapplies your work there, and then drops the stash if it applies successfully.
 
-`git stash branch testchanges`
+### Cleaning Your Working Directory
+1. You may not want to stash some work or files in your working directory, but simply get rid of them. The `git clean` command will do this for you.
+1. Some common reasons for this might be to remove craft that has been generated by merges or external tools or to remove build artifacts in order to run a clean build
+1. **You’ll want to be pretty careful with this command, because it’s designed to remove files from your working directory that are not tracked.**  
+  * If you change your mind, there is often no retrieving the content of those files. 
+  * A safer option is to run `git stash --all` to remove everything but save it in a stash.
 
-which creates a new branch for you, checks out the commit you were on when you stashed
-your work, reapplies your work there, and then drops the stash if it applies successfully
+1. To remove all the untracked files in your working directory, you can run `git clean -f -d`, which removes any files and also any subdirectories that become empty as a result. The `-f` means force or “really do this.”
+1. If you ever want to see what it would do, you can run the command with the  `-n` option, which means “do a dry run and tell me what you would have removed.”
+1. By default, the `git clean` command will only remove untracked files that are not ignored. Any file that matches a pattern in your `.gitignore` or other ignore files will not be removed. If you want to remove those files too, such as to remove all `.o` files generated from a build so you can do a fully clean build, you can add a `-x` to the clean command.
+1. The other way you can be careful about the process is to run it with the `-i` or “interactive” flag.
 
+# Searching
 
-#### Cleaning Your Working Directory
-Finally, you may not want to stash some work or files in your working directory, but simply get rid of them.
-The git clean command will do this for you.
-Some common reasons for this might be to remove cruft that has been generated by merges or external tools or
-to remove build artifacts in order to run a clean buil
-
-You’ll want to be pretty careful with this command, because it’s designed to remove files from your working
-directory that are not tracked. If you change your mind, there is often no retrieving the content of those files. A safer
-option is to run git stash --all to remove everything but save it in a stash.
-
-To
-remove all the untracked files in your working directory, you can run git clean -f -d, which removes any files and
-also any subdirectories that become empty as a result. The -f means force or “really do this.”
-If you ever want to see what it would do, you can run the command with the -n option, which means “do a dry
-run and tell me what you would have removed.”
-
-By default, the git clean command will only remove untracked files that are not ignored. Any file that matches a
-pattern in your .gitignore or other ignore files will not be removed. If you want to remove those files too, such as to
-remove all .o files generated from a build so you can do a fully clean build, you can add a -x to the clean command.
-
-If you don’t know what the git clean command is going to do, always run it with a -n first to double check before
-changing the -n to a -f and doing it for real. The other way you can be careful about the process is to run it with the -i
-or “interactive” flag.
-
-#### Searching
-##### Git Grep
-1. `git grep -n gmtime_r`
-By default, grep looks through the files in your working directory. You can pass -n to print out the line numbers
+### Git Grep
+1. `git grep -n gmtime_r`:  By default, grep looks through the files in your working directory. You can pass `-n` to print out the line numbers
 where Git has found matches.
-
-1. you can have Git summarize the output by just showing you which files
-matched and how many matches there were in each file with the --count option
-
-1. If you want to see what method or function it thinks it has found a match in, you can pass -p:
-`git grep -p gmtime_r *.c`
-
-1. You can also look for complex combinations of strings with the --and flag, which makes sure that multiple
-matches are in the same line.
+1. you can have Git summarize the output by just showing you which files matched and how many matches there were in each file with the `--count` option
+1. If you want to see what method or function it thinks it has found a match in, you can pass `-p`: `git grep -p gmtime_r *.c`
+1. You can also look for complex combinations of strings with the --and flag, which makes sure that multiple matches are in the same line.
 
 ```
 $ git grep --break --heading \
 -n -e '#define' --and \( -e LINK -e BUF_MAX \) v1.8.0
 ```
 
-The git grep command has a few advantages over normal searching commands such as grep and ack. The first
-is that it’s really fast, and the second is that you can search through any tree in Git, not just the working directory. As
-we saw in the previous example, we looked for terms in an older version of the Git source code, not the version that
-was currently checked out.
+1. The git grep command has a few advantages over normal searching commands such as `grep` and `ack`. 
+  * The first is that it’s really fast
+  * The second is that you can search through any tree in Git, not just the working directory. As we saw in the previous example, we looked for terms in an older version of the Git source code, not the version that was currently checked out.
 
-#### Git Log Search
-1. we can tell Git to
-only show us the commits that either added or removed that string with the -S option.
+### Git Log Search
+1. we can tell Git to only show us the commits that either added or removed that string with the `-S` option.
 `git log -Sstring_pattern --oneline`
-If you need to be more specific, you can provide a regular expression to search for with the -G option.
 
-#### Line Log Search
+If you need to be more specific, you can provide a regular expression to search for with the `-G` option.
 
-It is called with the -L option to git log and shows you the history of
-a function or line of code in your codebase.
-For example, if we wanted to see every change made to the function git_deflate_bound in the zlib.c file, we
-could run git log -L :git_deflate_bound:zlib.c. This tries to figure out what the bounds of that function are and
-then looks through the history and shows every change that was made to the function as a series of patches back to
-when the function was first created.
+### Line Log Search
 
-If Git can’t figure out how to match a function or method in your programming language, you can also provide
-it a regex. For example, this would have done the same thing: git log -L '/unsigned long git_deflate_
-bound/',/^}/:zlib.c. You could also give it a range of lines or a single line number and you’ll get the same sort of output.
+1. It is called with the `-L` option to git log and shows you the history of a function or line of code in your codebase.
+  * For example, if we wanted to see every change made to the function `git_deflate_bound` in the `zlib.c` file, we could run `git log -L :git_deflate_bound:zlib.c`. 
+  * This tries to figure out what the bounds of that function are and then looks through the history and shows every change that was made to the function as a series of patches back to when the function was first created.
+1. If Git can’t figure out how to match a function or method in your programming language, you can also provide it a regex. 
+  * For example, this would have done the same thing: 
+  ```
+  git log -L '/unsigned long git_deflate_bound/',/^}/:zlib.c
+  ```
+  *You could also give it a range of lines or a single line number and you’ll get the same sort of output.
 
-#### Rewriting History
+# Rewriting History
 
-#### Changing the Last Commit
+### Changing the Last Commit
 1. Change commit message
 `git commit --amend`: change your last commit
 
@@ -939,7 +870,7 @@ bound/',/^}/:zlib.c. You could also give it a range of lines or a single line nu
 You need to be careful with this technique because amending changes the SHA-1 of the commit. It’s like a very
 small rebase—don’t amend your last commit if you’ve already pushed it.  
 
-#### Changing Multiple Commit Messages
+### Changing Multiple Commit Messages
 
 To modify a commit that is farther back in your history, you must move to more complex tools. 
 You can use the rebase tool to rebase a series of commits onto the HEAD they were
@@ -991,17 +922,17 @@ bottom. It lists the oldest at the top, rather than the newest, because that’s
 You need to edit the script so that it stops at the commit you want to edit. To do so, change the word pick to the
 word edit for each of the commits you want the script to stop after.
 
-#### Reordering Commits
+### Reordering Commits
 You can also use interactive rebases to reorder or remove commits entirely
 
-#### Squashing a Commit
+### Squashing a Commit
 It’s also possible to take a series of commits and squash them down into a single commit with the interactive rebasing
 tool.
 
 If, instead of “pick” or “edit,” you specify “squash,” Git applies both that change and the change directly before it
 and makes you merge the commit messages.
 
-#### Splitting a Commit
+### Splitting a Commit
 Splitting a commit undoes a commit and then partially stages and commits as many times as commits you want to
 end up with.
 
@@ -1013,13 +944,13 @@ reset, and create multiple commits out of them.
 Once again, this changes the SHAs of all the commits in your list, so make sure no commit shows up in that list
 that you’ve already pushed to a shared repository.
 
-#### The Nuclear Option: filter-branch
+### The Nuclear Option: filter-branch
 There is another history-rewriting option that you can use if you need to rewrite a larger number of commits in
 some scriptable way—for instance, changing your e-mail address globally or removing a file from every commit. The
 command is filter-branch, and it can rewrite huge swaths of your history, so you probably shouldn’t use it unless
 your project isn’t yet public and other people haven’t based work off the commits you’re about to rewrite.
 
-#### Reset Demystified
+# Reset Demystified
 
 An easier way to think about reset and checkout is through the mental frame of Git being a content manager of three
 different trees. By “tree” here we really mean “collection of files,” not specifically the data structure. (There are a few
