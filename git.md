@@ -934,193 +934,150 @@ cases where the index doesn’t exactly act like a tree, but for our purposes it
 
 |Tree|Role|
 |---|---|
-|HEAD|Last commit snapshot, next parent|
+|HEAD|Last commit snapshot, next commit's parent|
 |Index| Proposed next commit snapshot|
 |Working Directory| Sandbox|
 
 #### The HEAD
-HEAD is the pointer to the current branch reference, which is in turn a pointer to the last commit made on that
-branch. That means HEAD will be the parent of the next commit that is created. It’s generally simplest to think of
-HEAD as the snapshot of your last commit.
+HEAD is the pointer to the current branch reference, which is in turn a pointer to the last commit made on that branch. That means HEAD will be the parent of the next commit that is created. It’s generally simplest to think of **HEAD as the snapshot of your last commit**.
 
-Here is an example of getting the actual directory
-listing and SHA checksums for each file in the HEAD snapshot
+Here is an example of getting the actual directory listing and SHA checksums for each file in the HEAD snapshot
+
 `git cat-file -p HEAD`
 `git ls-tree -r HEAD`
 
 #### The Index
 
-The Index is your proposed next commit. We’ve also been referring to this concept as Git’s “Staging Area” as this is
-what Git looks at when you run git commit.
-
-Git populates this index with a list of all the file contents that were last checked out into your Working Directory
-and what they looked like when they were originally checked out. You then replace some of those files with new
-versions of them, and git commit converts that into the tree for a new commit.
+1. The Index is your proposed next commit. We’ve also been referring to this concept as Git’s “Staging Area” as this is what Git looks at when you run git commit.
+1. Git populates this index with a list of all the file contents that were last checked out into your Working Directory and what they looked like when they were originally checked out. You then replace some of those files with new versions of them, and `git commit` converts that into the tree for a new commit.
 
 `git ls-files -s`
 
-The Index is not technically a tree structure—it’s actually implemented as a flattened manifest—but for our
-purposes it’s close enough.
+1. The Index is not technically a tree structure—it’s actually implemented as a flattened manifest.
 
 #### The Working Directory
 
-The other two trees store their content in an efficient but inconvenient
-manner, inside the .git folder. The Working Directory unpacks them into actual files, which makes it much easier
-for you to edit them. Think of the Working Directory as a sandbox, where you can try changes out before committing
-them to your staging area (Index) and then to history.
+1. The other two trees store their content in an efficient but inconvenient manner, inside the `.git` folder. The Working Directory unpacks them into actual files, which makes it much easier for you to edit them. 
+1. Think of the Working Directory as a sandbox, where you can try changes out before committing them to your staging area (Index) and then to history.
 
 `tree`
 
 #### The Workflow
-Git’s main purpose is to record snapshots of your project in successively better states, by manipulating these three trees.
 
-Let’s say you go into a new directory with a single file in it. We’ll call this v1 of the file, and we’ll indicate it in blue.
-Now we run git init, which creates a Git repository with a HEAD reference that points to an unborn branch (master
-doesn’t exist yet).
-At this point, only the Working Directory tree has any content.
+1. Git’s main purpose is to record snapshots of your project in successively better states, by manipulating these three trees.
 
-we use git add to take content in the Working Directory and copy it to the Index.
+1. Let’s say you go into a new directory with a single file in it. We’ll call this v1 of the file. Now we run `git init`, which creates a Git repository with a HEAD reference that points to an unborn branch (master doesn’t exist yet). At this point, only the Working Directory tree has any content.
+1. We use `git add` to take content in the Working Directory and copy it to the Index.
+1. Then we run `git commit`, which takes the contents of the Index and saves it as a permanent snapshot, creates a commit object which points to that snapshot, and updates master to point to that commit.
+  * If we run `git status` now, we’ll see no changes, because all three trees are the same.
 
-Then we run git commit, which takes the contents of the Index and saves it as a permanent snapshot, creates a
-commit object which points to that snapshot, and updates master to point to that commit.
-If we run git status, we’ll see no changes, because all three trees are the same.
+1. Now we want to make a change to that file and commit it. We’ll go through the same process, changing the file in our Working Directory. Let’s call this v2 of the file.
+1. If we run git status right now, we’ll see the file in red as “Changes not staged for commit,” because that entry differs between the Index and the Working Directory.
+1. Next we run `git add` on it to stage it into our Index. 
+  * At this point if we run `git status` we will see the file in green under “Changes to be committed” because the Index and HEAD differ – that is, our proposed next commit is now different from our last commit. 
+1. Finally, we run `git commit` to finalize the commit.
 
-Now we want to make a change to that file and commit it. We’ll go through the same process, changing the file in
-our Working Directory. Let’s call this v2 of the file, and indicate it in red.
+1. Switching branches or cloning goes through a similar process. 
+  * When you checkout a branch, it changes HEAD to point to the new branch ref, populates your Index with the snapshot of that commit, then copies the contents of the Index into your Working Directory.
 
-If we run git status right now, we’ll see the file in red as “Changes not staged for commit,” because that entry
-differs between the Index and the Working Directory. Next we run git add on it to stage it into our Index.
+### The Role of Reset
+##### Step 1: Move HEAD
+1. The first thing reset will do is move what HEAD points to. This isn’t the same as changing HEAD itself (which is what `checkout` does); 
+1. **reset moves the branch that HEAD is pointing to**. This means if HEAD is set to the master branch (i.e., you’re currently on the master branch), running `git reset 9e5e64a` will start by making master point to `9e5e64a`.
+  * No matter what form of reset with a commit you invoke, this is the first thing it will always try to do. With
+`git reset --soft HEAD~`, it will simply stop there. 
 
-At this point if we run git status we will see the file in green under “Changes to be committed” because the
-Index and HEAD differ – that is, our proposed next commit is now different from our last commit. Finally, we run
-git commit to finalize the commit.
+1. It essentially undid the last `git commit` command. When you run `git commit`, Git creates a new commit and moves the branch that HEAD points to up to it.
+When you reset to `HEAD~` (the parent of HEAD), you are moving the branch back to where it was, without changing the Index or Working Directory. 
+1. You could now update the Index and run `git commit` again to accomplish what `git commit --amend` would have done.
 
-Switching branches or cloning goes through a similar process. When you checkout a branch, it changes HEAD to
-point to the new branch ref, populates your Index with the snapshot of that commit, then copies the contents of the
-Index into your Working Directory.
+##### Step 2: Updating the Index (--mixed)
 
-#### The Role of Reset
-1. Step 1: Move HEAD
-The first thing reset will do is move what HEAD points to. This isn’t the same as changing HEAD itself (which is what
-checkout does); reset moves the branch that HEAD is pointing to. This means if HEAD is set to the master branch
-(i.e., you’re currently on the master branch), running git reset 9e5e64a will start by making master point
-to 9e5e64a.
-
-No matter what form of reset with a commit you invoke, this is the first thing it will always try to do. With
-reset --soft, it will simply stop there.
-`git reset --soft HEAD~`
-
-Now take a second to look at that diagram and realize what happened—it essentially undid the last git commit
-command. When you run git commit, Git creates a new commit and moves the branch that HEAD points to up to it.
-When you reset to HEAD~ (the parent of HEAD), you are moving the branch back to where it was, without changing the
-Index or Working Directory. You could now update the Index and run git commit again to accomplish what
-git commit --amend would have done.
-
-
-1. Step 2: Updating the Index (--mixed)
-
-Note that if you run git status now you’ll see in green the difference between the Index and what the new HEAD is.
-The next thing reset will do is to update the Index with the contents of whatever snapshot HEAD now points to.
+1. Note that if you run `git status` now you’ll see in green the difference between the Index and what the new HEAD is.
+1. The next thing reset will do is to update the Index with the contents of whatever snapshot HEAD now points to.
 
 `git reset [--mixed] HEAD~`
 
-If you specify the --mixed option, reset will stop at this point. This is also the default, so if you specify no option at
+  * If you specify the `--mixed` option, reset will stop at this point. This is also the default, so if you specify no option at
 all (just git reset HEAD~ in this case), this is where the command will stop.
 
-it still undid your last commit, but
-also unstaged everything. You rolled back to before you ran all your git add and git commit commands.
+1. It still undid your last commit, but also unstaged everything. You rolled back to before you ran all your `git add` and `git commit` commands.
 
-1. Step 3: Updating the Working Directory (--hard)
+##### Step 3: Updating the Working Directory (--hard)
 
-The third thing that reset does is makes the Working Directory look like the Index. If you use the --hard option, it will
-continue to this stage.
+1. The third thing that reset does is makes the Working Directory look like the Index. If you use the `--hard` option, it will continue to this stage.
 
-You undid your last commit, the git add and git commit commands,
-and all the work you did in your Working Directory.
-It’s important to note that this flag (--hard) is the only way to make the reset command dangerous, and one of
-the very few cases where Git will actually destroy data. Any other invocation of reset can be pretty easily undone, but
-the --hard option cannot, since it forcibly overwrites files in the Working Directory.
+1. You undid your last commit, the `git add` and `git commit` commands, and all the work you did in your Working Directory.
+1. **It’s important to note that this flag (`--hard`) is the only way to make the reset command dangerous**, and one of the very few cases where Git will actually destroy data. Any other invocation of reset can be pretty easily undone, but the `--hard` option cannot, since it forcibly overwrites files in the Working Directory.
 
-In this particular case, we still
-have the v3 version of our file in a commit in our Git DB, and we could get it back by looking at our reflog, but if we
+1. In this particular case, we still have the v3 version of our file in a commit in our Git DB, and we could get it back by looking at our reflog, but if we
 had not committed it, Git still would have overwritten the file and it would be unrecoverable.
 
-Recap
-The reset command overwrites these three trees in a specific order, stopping when you tell it to:
-  1.  Move the branch HEAD points to (stop here if --soft)
-  2.  Make the Index look like HEAD (stop here unless --hard)
-  3.  Make the Working Directory look like the Index
-  
-#### Reset with a Path
+##### Recap
 
-If you specify
-a path, reset will skip step 1, and limit the remainder of its actions to a specific file or set of files. This actually sort of
-makes sense—HEAD is just a pointer, and you can’t point to part of one commit and part of another. But the Index
+The reset command overwrites these three trees in a specific order, stopping when you tell it to:
+1. Move the branch HEAD points to (stop here if `--soft`)
+1. Make the Index look like HEAD (stop here unless `--hard`)
+1. Make the Working Directory look like the Index
+  
+##### Reset with a Path
+1. If you specify a path, reset will skip step 1, and limit the remainder of its actions to a specific file or set of files. 
+1. This actually sort of makes sense—HEAD is just a pointer, and you can’t point to part of one commit and part of another. But the Index
 and Working Directory can be partially updated, so reset proceeds with steps 2 and 3.
 
-`git reset file.txt`
+```
+git reset file.txt
+```
 
-So, assume we run git reset file.txt. This form (because you did not specify a commit SHA or branch, and
-you didn’t specify --soft or --hard) is shorthand for git reset --mixed HEAD file.txt, which:
+1. So, assume we run `git reset file.txt`. This form (because you did not specify a commit SHA or branch, and
+you didn’t specify --soft or --hard) is shorthand for `git reset --mixed HEAD file.txt`, which:
   1.  Moves the branch HEAD points to (skipped)
   2.  Makes the Index look like HEAD (stop here)
-So it essentially just copies file.txt from HEAD to the Index.
-
-This has the practical effect of unstaging the file. If we look at the diagram for that command and think about
+  
+So it essentially just copies `file.txt` from HEAD to the Index.
+1. This has the practical effect of **unstaging the file**. If we look at the diagram for that command and think about
 what git add does, they are exact opposites.
 
-We could just as easily not let Git assume we meant “pull the data from HEAD” by specifying a specific commit to
-pull that file version from. We would just run something like git reset eb43bf file.txt.
-
-This effectively does the same thing as if we had reverted the content of the file to v1 in the Working Directory, ran
-git add on it, then reverted to v3 again (without actually going through all those steps). If we run git commit now, it
+1. We could just as easily not let Git assume we meant “pull the data from HEAD” by specifying a specific commit to
+pull that file version from. We would just run something like `git reset eb43bf file.txt`.
+  * This effectively does the same thing as if we had reverted the content of the file to v1 in the Working Directory, ran
+`git add` on it, then reverted to v3 again (without actually going through all those steps). If we run `git commit` now, it
 will record a change that reverts that file to v1, even though we never actually had it in our Working Directory again.
-It’s also interesting to note that like git add, the reset command will accept a --patch option to unstage content
+
+1. It’s also interesting to note that like `git add`, the reset command will accept a `--patch` option to unstage content
 on a hunk-by-hunk basis. So you can selectively unstage or revert content.
 
 #### Squashing
 
-Say you have a series of commits with messages like “oops”, “WIP,” and “forgot this file.” You can use reset to
-quickly and easily squash them into a single commit that makes you look really smart.
+Say you have a series of commits with messages like “oops”, “WIP,” and “forgot this file.” You can use reset to quickly and easily squash them into a single commit that makes you look really smart.
 
-#### Check It Out
-Like reset, checkout manipulates the
-three trees, and it is a bit different depending on whether or not you give the command a file path.
+### Check It Out
+Like reset, `checkout` manipulates the three trees, and it is a bit different depending on whether or not you give the command a file path.
 
 ##### Without Paths
-Running git checkout [branch] is pretty similar to running git reset --hard [branch] in that it updates all three
-trees for you to look like [branch], but there are two important differences.
-1. First, unlike reset --hard, checkout is Working-Directory safe; it will check to make sure it’s not blowing away
-files that have changes to them. Actually, it’s a bit smarter than that—it tries to do a trivial merge in the Working
-Directory, so all the files you haven’t changed in will be updated. reset --hard, and on the other hand, will simply
-replace everything across the board without checking.
-1. The second important difference is how it updates HEAD. Where reset will move the branch that HEAD points
-to, checkout will move HEAD itself to point to another branch.
+1. Running `git checkout [branch]` is pretty similar to running `git reset --hard [branch]` in that it updates all three trees for you to look like [branch], but there are two important differences.
+1. First, unlike `reset --hard`, checkout is Working-Directory safe; it will check to make sure it’s not blowing away files that have changes to them. Actually, it’s a bit smarter than that—it tries to do a trivial merge in the Working Directory, so all the files you haven’t changed in will be updated. reset --hard, and on the other hand, will simply replace everything across the board without checking.
+1. The second important difference is how it updates HEAD. 
+  * reset will move the branch that HEAD points to
+  * checkout will move HEAD itself to point to another branch.
 
 ##### With Paths
 
-The other way to run checkout is with a file path, which, like reset, does not move HEAD. It is just like git reset
-[branch] file in that it updates the index with that file at that commit, but it also overwrites the file in the working
-directory. It would be exactly like git reset --hard [branch] file (if reset would let you run that)—it’s not Working-
-Directory safe, and it does not move HEAD.
-Also, like git reset and git add, checkout will accept a --patch option to allow you to selectively revert file
-contents on a hunk-by-hunk basis.
+1. The other way to run checkout is with a file path, which, like reset, does not move HEAD. It is just like `git reset [branch] file` in that it updates the index with that file at that commit, but it also overwrites the file in the working directory. It would be exactly like `git reset --hard [branch]` file (if reset would let you run that)—**it’s not Working-Directory safe, and it does not move HEAD.**
+1. Also, like `git reset` and `git add`, checkout will accept a `--patch` option to allow you to selectively revert file contents on a hunk-by-hunk basis.
 
-Here’s a cheat-sheet for which commands affect which trees. The “HEAD” column reads “REF” if that command
-moves the reference (branch) that HEAD points to, and “HEAD” if it moves HEAD itself. Pay especial attention to the
-WD Safe? column—if it says NO, take a second to think before running that command.
+1. Here’s a cheat-sheet for which commands affect which trees. 
+  * The “HEAD” column reads “REF” if that command moves the reference (branch) that HEAD points to, and “HEAD” if it moves HEAD itself. 
+  * Pay especial attention to the WD Safe? column—if it says NO, take a second to think before running that command.
 
-HEAD Index Workdir WD Safe?
-Commit Level
-reset --soft [commit] REF NO NO YES
-reset [commit] REF YES NO YES
-reset --hard [commit] REF YES YES NO
-checkout [commit] HEAD YES YES YES
-File Level
-reset (commit) [file] NO YES NO YES
-checkout (commit)
-[file]
-NO YES YES NO
+|HEAD |Index |Workdir WD Safe?|Commit| Level|
+|---|---|---|---|---|
+|reset --soft [commit]| REF| NO |NO |YES|
+|reset [commit]| REF |YES |NO |YES|
+|reset --hard [commit] |REF |YES| YES| NO|
+|checkout [commit] |HEAD| YES| YES |YES|
+|File Level reset (commit) [file] |NO| YES| NO| YES|
+|checkout (commit) [file] |NO| YES| YES| NO|
 
 
 # Advanced Merging
