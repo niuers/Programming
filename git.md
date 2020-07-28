@@ -1086,39 +1086,30 @@ Like reset, `checkout` manipulates the three trees, and it is a bit different de
 
 # Advanced Merging
 
-Git’s philosophy is to be smart about determining when a merge
-resolution is unambiguous, but if there is a conflict, it does not try to be clever about automatically resolving it.
-Therefore, if you wait too long to merge two branches that diverge quickly, you can run into some issues.
+Git’s philosophy is to be smart about determining when a merge resolution is unambiguous, but if there is a conflict, it does not try to be clever about automatically resolving it. Therefore, if you wait too long to merge two branches that diverge quickly, you can run into some issues.
 
-##### Merge Conflicts
+### Merge Conflicts
 
-First of all, if at all possible, try to make sure your working directory is clean before doing a merge that may have
-conflicts. If you have work in progress, either commit it to a temporary branch or stash it. This makes it so that you can
-undo anything you try here. If you have unsaved changes in your working directory when you try a merge, some of
-these tips may help you lose that work.
+1. First of all, if at all possible, try to make sure your working directory is clean before doing a merge that may have
+conflicts. 
+  * If you have work in progress, either `commit` it to a temporary branch or `stash` it. This makes it so that you can
+undo anything you try here. 
+  * If you have unsaved changes in your working directory when you try a merge, some of these tips may help you lose that work.
 
-The git merge --abort option tries to revert to your state before you ran the merge. The only cases where it may
-not be able to do this perfectly would be if you had unstashed, uncommitted changes in your working directory when
-you ran it, otherwise it should work fine.
-If for some reason you find yourself in a horrible state and just want to start over, you can also run git reset
---hard HEAD or wherever you want to get back to. Remember again that this will blow away your working directory, so
-make sure you don’t want any changes there.
+1. The `git merge --abort` option tries to revert to your state before you ran the merge. The only cases where it may not be able to do this perfectly would be if you had unstashed, uncommitted changes in your working directory when you ran it, otherwise it should work fine.
+1. If for some reason you find yourself in a horrible state and just want to start over, you can also run `git reset --hard HEAD` or wherever you want to get back to. 
+  * Remember again that this will blow away your working directory, so make sure you don’t want any changes there.
 
-1. Ignoring Whitespace
-The default merge strategy can take arguments though, and a few of them are about properly ignoring whitespace
-changes. If you see that you have a lot of whitespace issues in a merge, you can simply abort it and do it again, this
-time with -Xignore-all-space or -Xignore-space-change. The first option ignores changes in any amount of existing
-whitespace, the second ignores all whitespace changes altogether.
+1. Ignoring Whitespace: 
+  * If you see that you have a lot of whitespace issues in a merge, you can simply abort it and do it again, this
+time with `-Xignore-all-space` or `-Xignore-space-change`. 
+  * The first option ignores changes in any amount of existing whitespace, the second ignores all whitespace changes altogether.
 
-1. Manual File Re-merging
-First, we get into the merge conflict state. Then we want to get copies of my version of the file, their version (from
-the branch we’re merging in), and the common version (from where both sides branched off ). Then we want to fix up
-either their side or our side and re-try the merge again for just this single file.
-Getting the three file versions is actually pretty easy. Git stores all these versions in the index under “stages,”
-which each have numbers associated with them. Stage 1 is the common ancestor, stage 2 is your version, and stage 3 is
-from the MERGE_HEAD, the version you’re merging in (“theirs”).
-You can extract a copy of each of these versions of the conflicted file with the git show command and a special
-syntax.
+##### Manual File Re-merging
+1. First, we get into the merge conflict state. 
+1. Then we want to get copies of my version of the file, their version (from the branch we’re merging in), and the common version (from where both sides branched off ). 
+1. Then we want to fix up either their side or our side and re-try the merge again for just this single file.
+1. Getting the three file versions is actually pretty easy. Git stores all these versions in the index under “stages” which each have numbers associated with them. "Stage 1" is the common ancestor, "stage 2" is your version, and "stage 3" is from the `MERGE_HEAD`, the version you’re merging in (“theirs”). You can extract a copy of each of these versions of the conflicted file with the `git show` command and a special syntax. The `:1:hello.rb` is just shorthand for looking up that blob SHA.
 
 ```
 $ git show :1:hello.rb > hello.common.rb
@@ -1126,171 +1117,133 @@ $ git show :2:hello.rb > hello.ours.rb
 $ git show :3:hello.rb > hello.theirs.rb
 ```
 
-If you want to get a little more hard core, you can also use the ls-files -u plumbing command to get the actual
-SHAs of the Git blobs for each of these files.
-`git ls-files -u`
+1. If you want to get a little more hard core, you can also use the `ls-files -u` plumbing command to get the actual SHAs of the Git blobs for each of these files.
 
-The :1:hello.rb is just shorthand for looking up that blob SHA.
+```
+git ls-files -u
+```
 
-`git merge-file -p hello.ours.rb hello.common.rb hello.theirs.rb > hello.rb`
-
-If you want to get an idea before finalizing this commit about what was actually changed between one side or the
-other, you can ask git diff to compare what is in your working directory that you’re about to commit as the result of
-the merge to any of these stages.
-
-To compare your result to what you had in your branch before the merge, in other words, to see what the merge
-introduced, you can run `git diff --ours`:
-
-If we want to see how the result of the merge differed from what was on their side, you can run git diff
---theirs
-
-Finally, you can see how the file has changed from both sides with git diff --base.
+1. `git merge-file -p hello.ours.rb hello.common.rb hello.theirs.rb > hello.rb`
+1. If you want to get an idea before finalizing this commit about what was actually changed between one side or the other, you can ask `git diff` to compare what is in your working directory that you’re about to commit as the result of the merge to any of these stages.
+  * To compare your result to what you had in your branch before the merge, in other words, to see what the merge introduced, you can run `git diff --ours`:
+  * If we want to see how the result of the merge differed from what was on their side, you can run `git diff --theirs`
+  * Finally, you can see how the file has changed from both sides with `git diff --base`.
 
 ##### Checking out conflitcs
-Perhaps we’re not happy with the resolution at this point for some reason, or maybe manually editing one or both
-sides still didn’t work well and we need more context.
+1. Perhaps we’re not happy with the resolution at this point for some reason, or maybe manually editing one or both sides still didn’t work well and we need more context.
+1. For this example, we have two longer lived branches that each have a few commits in them but create a legitimate content conflict when merged.
 
-For this example, we have two longer lived branches that each have a few
-commits in them but create a legitimate content conflict when merged.
+```
+git log --graph --oneline --decorate --all
+```
 
-`$ git log --graph --oneline --decorate --all`
-
-One helpful tool is git checkout with the --conflict option. This re-checkouts the file and replaces the merge
-conflict markers. This can be useful if you want to reset the markers and try to resolve them again.
-You can pass --conflict either diff3 or merge (which is the default). If you pass it diff3, Git will use a slightly
-different version of conflict markers, not only giving you the “ours” and “theirs” versions, but also the “base” version
-inline to give you more context.
+1. One helpful tool is `git checkout` with the `--conflict` option. 
+  * This re-checkouts the file and replaces the merge conflict markers. 
+  * This can be useful if you want to reset the markers and try to resolve them again.
+  * You can pass `--conflict` either `diff3` or `merge` (which is the default). If you pass it `diff3`, Git will use a slightly different version of conflict markers, not only giving you the “ours” and “theirs” versions, but also the “base” version inline to give you more context.
+  
 ```
 $ git checkout --conflict=diff3 hello.rb
 ```
 
-The git checkout command can also take --ours and --theirs options, which can be a really fast way of just
-choosing either one side or the other without merging things at all.
+1. The git checkout command can also take `--ours` and `--theirs` options, which can be a really fast way of just choosing either one side or the other without merging things at all.
 
 ##### Merge Log
-To get a full list of all the unique commits that were included in either branch involved in this merge, we can use
-the “triple dot” syntax.
+1. To get a full list of all the unique commits that were included in either branch involved in this merge, we can use the “triple dot” syntax.
 ```
 $ git log --oneline --left-right HEAD...MERGE_HEAD
 ```
 
-We can further simplify this though to give us much more specific context. If we add the --merge option to
-git log, it will only show the commits in either side of the merge that touch a file that’s currently conflicted.
+1. We can further simplify this though to give us much more specific context. If we add the `--merge` option to git log, it will only show the commits in either side of the merge that touch a file that’s currently conflicted.
+```
 $ git log --oneline --left-right --merge
 < 694971d update phrase to hola world
 > c3ffff1 changed text to hello mundo
-If you run that with the -p option instead, you get just the diffs to the file that ended up in conflict. This can be
-really helpful in quickly giving you the context you need to help understand why something conflicts and how to more
-intelligently resolve it.
+```
+
+1. If you run that with the `-p` option instead, you get just the diffs to the file that ended up in conflict. This can be really helpful in quickly giving you the context you need to help understand why something conflicts and how to more intelligently resolve it.
 
 ##### Combine Diff Format
 
-Because Git stages any merge results that are successful, when you run git diff while in a conflicted merge state, you
-only get what is currently still in conflict. This can be helpful to see what you still have to resolve.
+1. Because Git stages any merge results that are successful, when you run `git diff` while in a conflicted merge state, you only get what is currently still in conflict. This can be helpful to see what you still have to resolve.
+1. When you run `git diff` directly after a merge conflict, it will give you information in a rather unique diff output format.
+1. The format is called “Combined Diff” and gives you two columns of data next to each line. 
+  * The first column shows you if that line is different (added or removed) between the “ours” branch and the file in your working directory
+  * The second column does the same between the “theirs” branch and your working directory copy.
+  * So in that example you can see that the <<<<<<< and >>>>>>> lines are in the working copy but were not in either side of the merge. This makes sense because the merge tool stuck them in there for our context, but we’re expected to remove them.
 
-When you run git diff directly after a merge conflict, it will give you information in a rather unique diff output format.
+1. You can also get this from the git log for any merge after the fact to see how something was resolved after the fact. Git will output this format if you run git show on a merge commit, or if you add a --cc option to a git log -p (which by default only shows patches for non-merge commits).
 
-The format is called “Combined Diff” and gives you two columns of data next to each line. The first column
-shows you if that line is different (added or removed) between the “ours” branch and the file in your working directory
-and the second column does the same between the “theirs” branch and your working directory copy.
-So in that example you can see that the <<<<<<< and >>>>>>> lines are in the working copy but were not in either
-side of the merge. This makes sense because the merge tool stuck them in there for our context, but we’re expected to
-remove them.
-
-You can also get this from the git log for any merge after the fact to see how something was resolved after the
-fact. Git will output this format if you run git show on a merge commit, or if you add a --cc option to a git log -p
-(which by default only shows patches for non-merge commits).
 ```
 $ git log --cc -p -1
 ```
 
-#### Undoing Merges
+##### Undoing Merges
 1. Fix the References
-
-If the unwanted merge commit only exists on your local repository, the easiest and best solution is to move the
-branches so that they point where you want them to. In most cases, if you follow the errant git merge with git reset
---hard HEAD~, this will reset the branch pointers so they look like this
-
-The downside of this approach is that it’s rewriting history, which can be problematic with a shared repository.
-If other people have the commits you’re rewriting, you should probably avoid reset. This approach also won’t work if
-any other commits have been created since the merge; moving the refs would effectively lose those changes.
+  * If the unwanted merge commit only exists on your local repository, the easiest and best solution is to move the branches so that they point where you want them to. In most cases, if you follow the errant `git merge` with `git reset --hard HEAD~`, this will reset the branch pointers
+  * The downside of this approach is that it’s rewriting history, which can be problematic with a shared repository. If other people have the commits you’re rewriting, you should probably avoid reset. This approach also won’t work if any other commits have been created since the merge; moving the refs would effectively lose those changes.
 
 1. Reverse the Commit
-
-Git gives you the option of making a new commit
-that undoes all the changes from an existing one. Git calls this operation a “revert,” and in this particular scenario,
+  * Git gives you the option of making a new commit that undoes all the changes from an existing one. Git calls this operation a “revert,” and in this particular scenario,
 you’d invoke it like this:
+
 ```
 $ git revert -m 1 HEAD
 ```
-The -m 1 flag indicates which parent is the “mainline” and should be kept. When you invoke a merge into HEAD
-(git merge topic), the new commit has two parents: the first one is HEAD (C6), and the second is the tip of the
-branch being merged in (C4). In this case, we want to undo all the changes introduced by merging in parent #2 (C4),
+  * The `-m 1` flag indicates which parent is the “mainline” and should be kept. When you invoke a merge into HEAD (`git merge topic`), the new commit has two parents: the first one is HEAD (C6), and the second is the tip of the branch being merged in (C4). In this case, we want to undo all the changes introduced by merging in parent #2 (C4),
 while keeping all the content from parent #1 (C6).
 
-Git will get confused if you try to merge
-topic into master again:
+  * Git will get confused if you try to merge topic into master again:
+```
 $ git merge topic
 Already up-to-date.
+```
 
-There’s nothing in topic that isn’t already reachable from master. What’s worse, if you add work to topic and
-merge again, Git will only bring in the changes since the reverted merge
+There’s nothing in topic that isn’t already reachable from master. What’s worse, if you add work to topic and merge again, Git will only bring in the changes since the reverted merge
 
-The best way around this is to un-revert the original merge, because now you want to bring in the changes that
-were reverted out, then create a new merge commit:
+1. The best way around this is to un-revert the original merge, because now you want to bring in the changes that were reverted out, then create a new merge commit:
 ```
 $ git revert ^M
 [master 09f0126] Revert "Revert "Merge branch 'topic'""
 $ git merge topic
 ```
 
-So far we’ve covered the normal merge of two branches, normally handled with what is called the “recursive” strategy
-of merging.
+So far we’ve covered the normal merge of two branches, normally handled with what is called the **“recursive” strategy** of merging.
 
-#### Other Types of Merges
 ##### Ours or Theirs Preference
 
-By default, when Git sees a conflict between two branches being merged, it will add merge conflict markers into
-your code and mark the file as conflicted and let you resolve it. If you would prefer for Git to simply choose a specific
-side and ignore the other side instead of letting you manually merge the conflict, you can pass the merge command
-either a -Xours or -Xtheirs.
-If Git sees this, it will not add conflict markers. Any differences that are mergeable, it will merge. Any differences
-that conflict, it will simply choose the side you specify in whole, including binary files
+1. By default, when Git sees a conflict between two branches being merged, it will add merge conflict markers into
+your code and mark the file as conflicted and let you resolve it. 
+  * If you would prefer for Git to simply choose a specific side and ignore the other side instead of letting you manually merge the conflict, you can pass the merge command
+either a `-Xours` or `-Xtheirs`.
+  * If Git sees this, it will not add conflict markers. Any differences that are mergeable, it will merge. Any differences that conflict, it will simply choose the side you specify in whole, including binary files
 
 
 # Debugging with Git
-1. File Annotation
+##### File Annotation
 
-If you track down a bug in your code and want to know when it was introduced and why, file annotation is often your
-best tool. It shows you what commit was the last to modify each line of any file. So, if you see that a method in your
-code is buggy, you can annotate the file with git blame to see when each line of the method was last edited and by
-whom. This example uses the -L option to limit the output to lines 12 through 22:
+1. If you track down a bug in your code and want to know when it was introduced and why, file annotation is often your best tool. 
+1. It shows you what commit was the last to modify each line of any file. So, if you see that a method in your code is buggy, you can annotate the file with git blame to see when each line of the method was last edited and by whom. This example uses the -L option to limit the output to lines 12 through 22:
 
 `git blame -L 12,22 simplegit.rb` 
 
-Also note the ^4832fe2
-commit lines, which designate that those lines were in this file’s original commit. That commit is when this file was
+Also note the `^4832fe2` commit lines, which designate that those lines were in this file’s original commit. That commit is when this file was
 first added to this project, and those lines have been unchanged since. This is a tad confusing, because now you’ve
 seen at least three different ways that Git uses the ^ to modify a commit SHA, but that is what it means here
 
-Another cool thing about Git is that it doesn’t track file renames explicitly. It records the snapshots and then
-tries to figure out what was renamed implicitly, after the fact. One of the interesting features of this is that you
-can ask it to figure out all sorts of code movement as well. If you pass -C to git blame, Git analyzes the file you’re
-annotating and tries to figure out where snippets of code within it originally came from if they were copied from
-elsewhere.
+1. Another cool thing about Git is that it doesn’t track file renames explicitly. It records the snapshots and then tries to figure out what was renamed implicitly, after the fact. One of the interesting features of this is that you can ask it to figure out all sorts of code movement as well. If you pass -C to git blame, Git analyzes the file you’re annotating and tries to figure out where snippets of code within it originally came from if they were copied from elsewhere.
+
 `git blame -C -L 141,153 GITPackUpload.m`
 
-1. Binary Search
+##### Binary Search
 
-Annotating a file helps if you know where the issue is to begin with. If you don’t know what is breaking, and there
+1. Annotating a file helps if you know where the issue is to begin with. If you don’t know what is breaking, and there
 have been dozens or hundreds of commits since the last state where you know the code worked, you’ll likely turn to
 git bisect for help. The bisect command does a binary search through your commit history to help you identify as
 quickly as possible which commit introduced an issue.
 
 
-First you run git bisect start to get things going, and then you use
-git bisect bad to tell the system that the current commit you’re on is broken. Then, you must tell bisect when the
-last known good state was, using git bisect good [good_commit]:
+1. First you run git bisect start to get things going, and then you use git bisect bad to tell the system that the current commit you’re on is broken. Then, you must tell bisect when the last known good state was, using git bisect good [good_commit]:
 ```
 $ git bisect start
 $ git bisect bad
@@ -1298,28 +1251,25 @@ $ git bisect good v1.0
 Bisecting: 6 revisions left to test after this
 [ecb6e1bc347ccecc5f9350d878ce677feb13d3b2] error handling on repo
 ```
-Git figured out that about 12 commits came between the commit you marked as the last good commit (v1.0) and
+
+1. Git figured out that about 12 commits came between the commit you marked as the last good commit (v1.0) and
 the current bad version, and it checked out the middle one for you. At this point, you can run your test to see whether
 the issue exists as of this commit. If it does, then it was introduced sometime before this middle commit; if it doesn’t,
 then the problem was introduced sometime after the middle commit. It turns out there is no issue here, and you tell
 Git that by typing git bisect good and continue your journey
 
-Now you’re on another commit, halfway between the one you just tested and your bad commit. You run your test
+1. Now you’re on another commit, halfway between the one you just tested and your bad commit. You run your test
 again and find that this commit is broken, so you tell Git that with git bisect bad
 
+1. When you’re finished, you should run git bisect reset to reset your HEAD to where you were before you started, or you’ll end up in a weird state
 
-When you’re finished, you should run git bisect reset to reset your HEAD to where you were before you
-started, or you’ll end up in a weird state
-
-In fact, if
-you have a script that will exit 0 if the project is good or non-0 if the project is bad, you can fully automate git bisect.
-First, you again tell it the scope of the bisect by providing the known bad and good commits. You can do this by listing
-them with the bisect start command if you want, listing the known bad commit first and the known good commit
-second:
+1. In fact, if you have a script that will exit 0 if the project is good or non-0 if the project is bad, you can fully automate git bisect. First, you again tell it the scope of the bisect by providing the known bad and good commits. You can do this by listing them with the bisect start command if you want, listing the known bad commit first and the known good commit second:
+```
 $ git bisect start HEAD v1.0
 $ git bisect run test-error.sh
-Doing so automatically runs test-error.sh on each checked-out commit until Git finds the first broken commit.
-You can also run something such as make or make tests or whatever you have that runs automated tests for you.
+```
+
+Doing so automatically runs test-error.sh on each checked-out commit until Git finds the first broken commit. You can also run something such as make or make tests or whatever you have that runs automated tests for you.
 
 
 # Git GUI
