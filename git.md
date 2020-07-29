@@ -58,6 +58,9 @@ There are three levels of git config: system, global, local, each of these "leve
 1. Global config: `~/.gitconfig`, applies to the user.
 1. Local config: `.git/config` under each repository, per repository
 
+### List Configurations
+1. `git config --list`
+
 ### Excludes file globally
 If you want to ignore certain files for all repositories that you work with, set them in the file: `~/lgitignore_global`: 
 
@@ -210,7 +213,8 @@ section on data recovery). However, anything you lose that was never committed i
 
 1. `git remote -v`: list remote repositories
 1. Add a remote repository 
-`git remote add pb https://github.com/paulboone/ticgit`
+`git remote add test https://github.com/test/testgit`
+`git remote add test origin/test`
 
 1. `git fetch [remote-name]`: 
   * The command goes out to that remote project and pulls down all the data from that remote project that you don’t have yet. After you do this, you should have references to all the branches from that remote, which you can merge in or inspect at any time.
@@ -222,6 +226,24 @@ Running `git pull` generally fetches data from the server you originally cloned 
 ### Pushing to Your Remotes
 1. `git push [remote-name] [branch-name]`
 1. `git remote show origin`: inspect a remote
+
+### Stop tracking a Remote Branch
+
+1. there's no such concept of local tracking branches, only remote tracking branches. So origin/master is a remote tracking branch for master in the origin repo
+
+1.  You need to reset the configuration associated to the local branch:
+```
+git config --unset branch.<branch>.remote
+
+git config --unset branch.<branch>.merge
+```
+That will make any push/pull completely unaware of `origin/`.
+
+1. You don't have to delete your local branch. Simply delete your remote tracking branch:
+```
+git branch -d -r origin/<remote branch name> (This will not delete the branch on the remote repo!)
+```
+
 
 # Git Tag
 
